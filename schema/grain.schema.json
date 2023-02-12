@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://raw.githubusercontent.com/grainpath/data/main/schema/grain.schema.json",
+  "title": "Grain Entity",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "shape": {
+      "$ref": "https://geojson.org/schema/Feature.json"
+    },
+    "location": {
+      "$ref": "https://geojson.org/schema/Point.json"
+    },
+    "keywords": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "linked": {
+      "type": "object",
+      "properties": {
+        "dbpedia": {
+          "type": "string",
+          "format": "iri",
+          "pattern": "^https{0,1}:\\/\\/dbpedia\\.org\\/resource\\/.+$"
+        },
+        "geonames": {
+          "type": "string",
+          "format": "url",
+          "pattern": "^https{0,1}:\\/\\/www\\.geonames\\.org\\/(?:0|[1-9][0-9]*)$"
+        },
+        "osm": {
+          "type": "string",
+          "format": "url",
+          "pattern": "^https{0,1}:\\/\\/www\\.openstreetmap\\.org\\/(?:node|way)\\/(?:0|[1-9][0-9]*)$"
+        },
+        "wikidata": {
+          "type": "string",
+          "format": "url",
+          "pattern": "^https{0,1}:\\/\\/www\\.wikidata\\.org\\/wiki\\/Q(?:0|[1-9][0-9]*)$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "tags": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "$ref": "#/$defs/lnk" },
+        "website": { "$ref": "#/$defs/lnk" },
+        "country": { "type": "string" },
+        "settlement": { "type": "string" },
+        "district": { "type": "string" },
+        "place": { "type": "string" },
+        "house": { "type": "string" },
+        "postal_code": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "opening_hours": { "type": "string" },
+        "fee": { "type": "boolean" },
+        "charge": { "type": "string" },
+        "clothes": { "$ref": "#/$defs/seq" },
+        "cuisine": { "$ref": "#/$defs/seq" },
+        "rental": { "$ref": "#/$defs/seq" },
+        "capacity": { "$ref": "#/$defs/mea" },
+        "min_age": { "$ref": "#/$defs/mea" },
+        "rank": { "$ref": "#/$defs/mea" },
+        "delivery": { "type": "boolean" },
+        "drinking_water": { "type": "boolean" },
+        "internet_access": { "type": "boolean" },
+        "shower": { "type": "boolean" },
+        "takeaway": { "type": "boolean" },
+        "toilets": { "type": "boolean" },
+        "wheelchair": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "additionalProperties": false
+  },
+  "required": [ "id", "shape", "location", "keywords", "linked", "tags" ],
+  "additionalProperties": false,
+  "$defs": {
+    "seq": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "mea": { "type": "integer", "minimum": 0 }
+  }
+}
