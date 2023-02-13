@@ -19,7 +19,6 @@ node tags.js \
   healthcare \
   historic \
   leisure \
-  man_made \
   natural \
   office \
   public_transport \
@@ -27,3 +26,4 @@ node tags.js \
   shop \
   sport \
   tourism \
+# man_made \
