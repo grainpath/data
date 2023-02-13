@@ -6,6 +6,8 @@ node tags.js \
   aerialway \
   aeroway \
   amenity \
+  artwork_type \
+  attraction \
   building \
   business \
   clothes \
