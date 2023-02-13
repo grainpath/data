@@ -38,9 +38,9 @@ namespace osm
 
         public bool? Fee { get; set; }
 
-        public string Charge { get; set; }
+        public List<string> Charge { get; set; }
 
-        public string OpeningHours { get; set; }
+        public List<string> OpeningHours { get; set; }
 
         public SortedSet<string> Clothes { get; set; }
 
@@ -73,7 +73,7 @@ namespace osm
         public bool? Wheelchair { get; set; }
     }
 
-    internal class OsmGrainLinked
+    internal class OsmGrainLink
     {
         public string Osm { get; set; }
 
@@ -88,7 +88,7 @@ namespace osm
 
         public OsmGrainTags Tags { get; set; } = new();
 
-        public OsmGrainLinked Linked { get; set; } = new();
+        public OsmGrainLink Link { get; set; } = new();
 
         public SortedSet<string> Keywords { get; set; } = new();
     }
