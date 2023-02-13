@@ -1,8 +1,10 @@
 using GeoJSON.Text.Feature;
 using GeoJSON.Text.Geometry;
+using MongoDB.Bson;
 using OsmSharp;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 namespace osm
 {
@@ -60,8 +62,10 @@ namespace osm
                     TagExtractor.Extract(node.Tags, grain);
                     LinkExtractor.Extract(node, grain.link);
 
-                    grain.location = new Point(new Position(lat, lon));
-                    grain.shape = new Feature(grain.location);
+                    var p = new Point(new Position(lat, lon));
+
+                    grain.location = BsonDocument.Parse(JsonSerializer.Serialize<Point>(p));
+                    grain.shape = BsonDocument.Parse(JsonSerializer.Serialize<Feature>(new(p)));
 
                     return grain;
                 }
@@ -115,13 +119,13 @@ namespace osm
 
                     if (!Cartesian.IsCounterClockwise(seq)) { seq.Reverse(); }
 
-                    grain.location = Cartesian.Centroid(seq);
+                    grain.location = BsonDocument.Parse(JsonSerializer.Serialize<Point>(Cartesian.Centroid(seq)));
 
                     var polygon = new Polygon(new List<LineString>()
                     {
                         new LineString(seq.Select(p => p.Coordinates))
                     });
-                    grain.shape = new Feature(polygon);
+                    grain.shape = BsonDocument.Parse(JsonSerializer.Serialize<Feature>(new Feature(polygon)));;
 
                     return grain;
                 }
