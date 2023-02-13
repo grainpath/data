@@ -4,92 +4,116 @@ using System.Collections.Generic;
 
 namespace osm
 {
+    internal class OsmGrainAddress
+    {
+        public string country { get; set; }
+
+        public string settlement { get; set; }
+
+        public string district { get; set; }
+
+        public string place { get; set; }
+
+        public string house { get; set; }
+
+        public string postal_code { get; set; }
+    }
+
+    internal class OsmGrainPayment
+    {
+        public bool? cash { get; set; }
+
+        public bool? card { get; set; }
+
+        public bool? amex { get; set; }
+
+        public bool? jcb { get; set; }
+
+        public bool? mastercard { get; set; }
+
+        public bool? visa { get; set; }
+
+        public bool? crypto { get; set; }
+    }
+
     internal class OsmGrainTags
     {
         // info
 
-        public string Name { get; set; }
+        public string name { get; set; }
 
-        public string Image { get; set; }
+        public string image { get; set; }
 
-        public string Website { get; set; }
+        public string website { get; set; }
 
-        // address
+        public OsmGrainAddress address { get; set; } = new();
 
-        public string Country { get; set; }
-
-        public string Settlement { get; set; }
-
-        public string District { get; set; }
-
-        public string Place { get; set; }
-
-        public string House { get; set; }
-
-        public string PostalCode { get; set; }
+        public OsmGrainPayment payment { get; set; } = new();
 
         // contact
 
-        public string Email { get; set; }
+        public string email { get; set; }
 
-        public string Phone { get; set; }
-
-        // specific
-
-        public bool? Fee { get; set; }
-
-        public List<string> Charge { get; set; }
-
-        public List<string> OpeningHours { get; set; }
-
-        public SortedSet<string> Clothes { get; set; }
-
-        public SortedSet<string> Cuisine { get; set; }
-
-        public SortedSet<string> Rental { get; set; }
-
-        // measurable
-
-        public long? Capacity { get; set; }
-
-        public long? MinAge { get; set; }
-
-        public long? Rank { get; set; }
+        public string phone { get; set; }
 
         // boolean
 
-        public bool? Delivery { get; set; }
+        public bool? delivery { get; set; }
 
-        public bool? DrinkingWater { get; set; }
+        public bool? drinking_water { get; set; }
 
-        public bool? InternetAccess { get; set; }
+        public bool? internet_access { get; set; }
 
-        public bool? Shower { get; set; }
+        public bool? shower { get; set; }
 
-        public bool? Takeaway { get; set; }
+        public bool? smoking { get; set; }
 
-        public bool? Toilets { get; set; }
+        public bool? takeaway { get; set; }
 
-        public bool? Wheelchair { get; set; }
+        public bool? toilets { get; set; }
+
+        public bool? wheelchair { get; set; }
+
+        // measurable
+
+        public long? capacity { get; set; }
+
+        public long? min_age { get; set; }
+
+        public long? rank { get; set; }
+
+        // specific
+
+        public bool? fee { get; set; }
+
+        public List<string> charge { get; set; }
+
+        public List<string> opening_hours { get; set; }
+
+        public SortedSet<string> clothes { get; set; }
+
+        public SortedSet<string> cuisine { get; set; }
+
+        public SortedSet<string> rental { get; set; }
     }
 
     internal class OsmGrainLink
     {
-        public string Osm { get; set; }
+        public string osm { get; set; }
 
-        public string Wikidata { get; set; }
+        public string wikidata { get; set; }
     }
 
     internal class OsmGrain
     {
-        public Feature Shape { get; set; }
+        public Feature shape { get; set; }
 
-        public Point Location { get; set; }
+        public Point location { get; set; }
 
-        public OsmGrainTags Tags { get; set; } = new();
+        public OsmGrainTags tags { get; set; } = new();
 
-        public OsmGrainLink Link { get; set; } = new();
+        public OsmGrainLink link { get; set; } = new();
 
-        public SortedSet<string> Keywords { get; set; } = new();
+        public SortedSet<string> keywords { get; set; } = new();
     }
 }
