@@ -1,16 +1,40 @@
 using OsmSharp.Tags;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace osm
 {
     static class TagExtractor
     {
-        static Regex SnakeCaseRegex = new(@"^[a-z]+(?:[_][a-z]+)*$", RegexOptions.Compiled);
+        private sealed class Item
+        {
+            public string value { get; set; }
+        }
+
+        static readonly SortedSet<string> _clothes;
+        static readonly SortedSet<string> _cuisine;
+        static readonly SortedSet<string> _rental;
+
+        static SortedSet<string> GetDictionary(string file)
+        {
+            var json = File.ReadAllText(string.Join(Path.DirectorySeparatorChar, new[] { "Resources", "tags", file + ".json" }));
+            return new(JsonSerializer.Deserialize<List<Item>>(json).Select(i => i.value));
+        }
+
+        static TagExtractor()
+        {
+            _clothes = GetDictionary("clothes");
+            _cuisine = GetDictionary("cuisine");
+            _rental = GetDictionary("rental");
+        }
+
+        // supporting functions
 
         static string Http(string str)
             => Regex.IsMatch(str, @"^https?://") ? str : "http://" + str;
@@ -66,7 +90,20 @@ namespace osm
         {
             foreach (var item in lst) {
                 if (tags.TryGetValue(item, out var v) && IsNonTrivialString(v)) {
-                    act.Invoke(v); return;
+                    act.Invoke(v);
+                    return;
+                }
+            }
+        }
+
+        static void Pay(TagsCollectionBase tags, string[] lst, Action<bool> act)
+        {
+            var vs = new SortedSet<string> { "yes", "only" };
+
+            foreach (var item in lst) {
+                if (tags.TryGetValue(item, out var v)) {
+                    act.Invoke(vs.Contains(v));
+                    return;
                 }
             }
         }
@@ -99,7 +136,29 @@ namespace osm
                 && Regex.IsMatch(filter(s), @"^\+?\d{4,20}$");
         }
 
-        //
+        static bool TryParsePositiveInteger(string s, out long num)
+        {
+            num = 0;
+            long cur = 0;
+
+            for (int i = 0; i < s.Length; ++i) {
+
+                if (char.IsDigit(s[i])) {
+                    cur = cur * 10 + long.Parse(s[i].ToString());
+                }
+                
+                else {
+                    num = (cur > 0) ? cur : num;
+                    cur = 0;
+                }
+            }
+
+            num = (cur > 0) ? cur : num;
+
+            return num > 0;
+        }
+
+        // extractors for a specific tag
 
         static void Name(TagsCollectionBase otags, OsmGrainTags gtags)
         {
@@ -107,19 +166,16 @@ namespace osm
 
             foreach (var k in ks) {
                 if (otags.TryGetValue(k, out var v) && IsNonTrivialString(v)) {
-                    gtags.Name = v; return;
+                    gtags.name = v;
+                    return;
                 }
             }
         }
 
         static void Image(TagsCollectionBase otags, OsmGrainTags gtags)
         {
-            var ks = new string[] { "image", };
-
-            foreach (var k in ks) {
-                if (otags.TryGetValue(k, out var v) && IsStandardUri(Http(v))) {
-                    gtags.Image = Http(v); return;
-                }
+            if (otags.TryGetValue("image", out var v) && IsStandardUri(Http(v))) {
+                gtags.image = Http(v);
             }
         }
 
@@ -131,55 +187,191 @@ namespace osm
 
             foreach (var k in ks) {
                 if (otags.TryGetValue(k, out var v) && IsStandardUri(Http(v))) {
-                    gtags.Website = Http(v); return;
+                    gtags.website = Http(v);
+                    return;
                 }
             }
 
-            ks = new[] { "wikipedia" };
-
-            foreach (var k in ks) {
-                if (otags.TryGetValue(k, out var v) && TryConstructWikipedia(v, out var u)) {
-                    gtags.Website = u; return;
+            {
+                if (otags.TryGetValue("wikipedia", out var v) && TryConstructWikipedia(v, out var u)) {
+                    gtags.website = u;
                 }
             }
         }
 
         static void Address(TagsCollectionBase otags, OsmGrainTags gtags)
         {
-            var _c = new string[] { "addr:country", };
-            var _s = new string[] { "addr:city", "addr:province", "addr:county", "addr:hamlet", };
-            var _d = new string[] { "addr:district", "addr:subdistrict", "addr:suburb", };
-            var _p = new string[] { "addr:street", "addr:place", };
-            var _h = new string[] { "addr:housenumber", "addr:conscriptionnumber", };
-            var _t = new string[] { "addr:postcode", "addr:postbox", };
+            var _c = new[] { "addr:country" };
+            var _s = new[] { "addr:city", "addr:province", "addr:county", "addr:hamlet" };
+            var _d = new[] { "addr:district", "addr:subdistrict", "addr:suburb" };
+            var _p = new[] { "addr:street", "addr:place" };
+            var _h = new[] { "addr:housenumber", "addr:conscriptionnumber" };
+            var _t = new[] { "addr:postcode", "addr:postbox" };
 
-            Accommodate(otags, _c, (string c) => { gtags.Country = c; });
-            Accommodate(otags, _s, (string s) => { gtags.Settlement = s; });
-            Accommodate(otags, _d, (string d) => { gtags.District = d; });
-            Accommodate(otags, _p, (string p) => { gtags.Place = p; });
-            Accommodate(otags, _h, (string h) => { gtags.House = h; });
-            Accommodate(otags, _t, (string t) => { gtags.PostalCode = t; });
+            Accommodate(otags, _c, (string c) => { gtags.address.country = c; });
+            Accommodate(otags, _s, (string s) => { gtags.address.settlement = s; });
+            Accommodate(otags, _d, (string d) => { gtags.address.district = d; });
+            Accommodate(otags, _p, (string p) => { gtags.address.place = p; });
+            Accommodate(otags, _h, (string h) => { gtags.address.house = h; });
+            Accommodate(otags, _t, (string t) => { gtags.address.postal_code = t; });
+        }
+
+        static void Payment(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            var _cash = new[] { "payment:cash", "payment:coins" };
+            var _card = new[] { "payment:credit_cards", "payment:debit_cards", "payment:cards" };
+            var _amex = new[] { "payment:american_express" };
+            var _jcb = new[] { "payment:jcb" };
+            var _mastercard = new[] { "payment:mastercard", "payment:maestro" };
+            var _visa = new[] { "payment:visa", "payment:visa_electron" };
+            var _crypto = new[] { "payment:cryptocurrencies", "payment:bitcoin" };
+
+            Pay(otags, _cash, (bool cash) => { gtags.payment.cash = cash; });
+            Pay(otags, _card, (bool card) => { gtags.payment.card = card; });
+            Pay(otags, _amex, (bool amex) => { gtags.payment.amex = amex; });
+            Pay(otags, _jcb, (bool jcb) => { gtags.payment.jcb = jcb; });
+            Pay(otags, _mastercard, (bool mastercard) => { gtags.payment.mastercard = mastercard; });
+            Pay(otags, _visa, (bool visa) => { gtags.payment.visa = visa; });
+            Pay(otags, _crypto, (bool crypto) => { gtags.payment.crypto = crypto; });
         }
 
         static void Email(TagsCollectionBase otags, OsmGrainTags gtags)
         {
-            var ks = new string[] { "contact:email", "email", };
+            var ks = new string[] { "contact:email", "email" };
 
             foreach (var k in ks) {
                 if (otags.TryGetValue(k, out var v) && MailAddress.TryCreate(v, out _)) {
-                    gtags.Email = v; return;
+                    gtags.email = v;
+                    return;
                 }
             }
         }
 
         static void Phone(TagsCollectionBase otags, OsmGrainTags gtags)
         {
-            var ks = new string[] { "contact:phone", "phone", "contact:mobile", }; 
+            var ks = new string[] { "contact:phone", "phone", "contact:mobile" }; 
 
             foreach (var k in ks) {
                 if (otags.TryGetValue(k, out var v) && IsPhone(v)) {
-                    gtags.Phone = v; return;
+                    gtags.phone = v;
+                    return;
                 }
+            }
+        }
+
+        static void Delivery(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            var vs = new SortedSet<string> { "yes", "only" };
+
+            if (otags.TryGetValue("delivery", out var v)) {
+                gtags.delivery = vs.Contains(v) ? true : false;
+            }
+        }
+
+        static void DrinkingWater(TagsCollectionBase otags, OsmGrain grain)
+        {
+            var ks = new string[] { "drinking_water", "drinking_water:legal", "drinking_water:refill" };
+            var vs = new SortedSet<string>() { "yes" };
+
+            foreach (var k in ks) {
+                if (otags.TryGetValue(k, out var v)) {
+
+                    if (vs.Contains(v)) { grain.keywords.Add("drinking_water"); }
+                    grain.tags.drinking_water = vs.Contains(v) ? true : false;
+                    return;
+                }
+            }
+        }
+
+        static void InternetAccess(TagsCollectionBase otags, OsmGrain grain)
+        {
+            var vs = new SortedSet<string>() { "wlan", "yes", "terminal", "wired", "wifi", };
+
+            if (otags.TryGetValue("internet_access", out var v)) {
+
+                if (vs.Contains(v)) { grain.keywords.Add("internet_access"); }
+                grain.tags.internet_access = vs.Contains(v) ? true : false;
+            }
+        }
+
+        static void Shower(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            var vs = new SortedSet<string>() { "yes", "hot", "outdoor" };
+
+            if (otags.TryGetValue("shower", out var v)) {
+                gtags.shower = vs.Contains(v) ? true : false;
+            }
+        }
+
+        static void Smoking(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            var ks = new[] { "smoking", "smoking:outside" };
+            var vs = new SortedSet<string>() { "yes", "outside", "isolated", "separated", "outdoor", "dedicated", "designated" };
+
+            foreach (var k in ks) {
+                if (otags.TryGetValue(k, out var v)) {
+                    gtags.smoking = vs.Contains(v) ? true : false;
+                    return;
+                }
+            }
+        }
+
+        static void Takeaway(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            var vs = new SortedSet<string> { "yes", "only" };
+
+            if (otags.TryGetValue("takeaway", out var v)) {
+                gtags.takeaway = vs.Contains(v) ? true : false;
+            }
+        }
+
+        static void Toilets(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            var vs = new SortedSet<string>() { "yes" };
+
+            if (otags.TryGetValue("toilets", out var v)) {
+                gtags.toilets = vs.Contains(v) ? true : false;
+            }
+        }
+
+        static void Wheelchair(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            var vs = new SortedSet<string>() { "yes" };
+
+            if (otags.TryGetValue("wheelchair", out var v)) {
+                gtags.wheelchair = vs.Contains(v) ? true : false;
+            }
+        }
+
+        static void Capacity(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            var ks = new string[] { "capacity", "seats" };
+
+            foreach (var k in ks) {
+                if (otags.TryGetValue(k, out var v) && long.TryParse(v, out var n) && n >= 0) {
+                    gtags.capacity = n;
+                    return;
+                }
+            }
+
+            {
+                if (otags.TryGetValue("capacity:persons", out var v) && TryParsePositiveInteger(v, out var p)) {
+                    gtags.capacity = p;
+                }
+            }
+        }
+
+        static void MinAge(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            if (otags.TryGetValue("min_age", out var v) && long.TryParse(v, out var n) && n >= 0) {
+                gtags.min_age = n;
+            }
+        }
+
+        static void Rank(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            if (otags.TryGetValue("stars", out var v) && long.TryParse(v, out var n) && n >= 0) {
+                gtags.rank = n;
             }
         }
 
@@ -190,24 +382,21 @@ namespace osm
 
             foreach (var k in ks) {
                 if (otags.TryGetValue(k, out var v)) {
-                    gtags.Fee = vs.Contains(v) ? false : true; return;
+                    gtags.fee = vs.Contains(v) ? false : true;
+                    return;
                 }
             }
         }
 
         static void Charge(TagsCollectionBase otags, OsmGrainTags gtags)
         {
-            var ks = new string[] { "charge", };
+            if (otags.TryGetValue("charge", out var v)) {
 
-            foreach (var k in ks) {
+                var vs = Divide(v);
 
-                if (otags.TryGetValue(k, out var v)) {
-
-                    var vs = Divide(v);
-
-                    if (IsNonTrivialStringSequence(vs)) {
-                        gtags.Charge = vs; return;
-                    }
+                if (IsNonTrivialStringSequence(vs)) {
+                    gtags.charge = vs;
+                    return;
                 }
             }
         }
@@ -223,23 +412,79 @@ namespace osm
                     var vs = Divide(v);
 
                     if (IsNonTrivialStringSequence(vs)) {
-                        gtags.OpeningHours = vs; return;
+                        gtags.opening_hours = vs;
+                        return;
                     }
                 }
             }
         }
 
-        public static void Extract(TagsCollectionBase otags, OsmGrainTags gtags)
+        static void Clothes(TagsCollectionBase otags, OsmGrainTags gtags)
         {
-            Name(otags, gtags);
-            Image(otags, gtags);
-            Website(otags, gtags);
-            Address(otags, gtags);
-            Email(otags, gtags);
-            Phone(otags, gtags);
-            Fee(otags, gtags);
-            Charge(otags, gtags);
-            OpeningHours(otags, gtags);
+            if (otags.TryGetValue("clothes", out var v)) {
+                SortedSet<string> res = new(Divide(v).Where(item => _clothes.Contains(item)));
+                gtags.clothes = (res.Count > 0) ? res : null;
+            }
+        }
+
+        static void Cuisine(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            var res = new SortedSet<string>();
+
+            string v;
+            var vs = new SortedSet<string>() { "yes", "only", "limited" };
+
+            if (otags.TryGetValue("cuisine", out v)) {
+                Divide(v)
+                    .Where(item => _cuisine.Contains(item))
+                    .Select(item => res.Add(item));
+            }
+
+            if (otags.TryGetValue("diet:vegan", out v) && vs.Contains(v)) {
+                res.Add("vegan");
+            }
+
+            if (otags.TryGetValue("diet:vegetarian", out v) && vs.Contains(v)) {
+                res.Add("vegetarian");
+            }
+
+            if (res.Count > 0) { gtags.cuisine = res; }
+        }
+
+        static void Rental(TagsCollectionBase otags, OsmGrainTags gtags)
+        {
+            if (otags.TryGetValue("rental", out var v)) {
+                SortedSet<string> res = new(Divide(v).Where(item => _rental.Contains(item)));
+                gtags.rental = (res.Count > 0) ? res : null;
+            }
+        }
+
+        public static void Extract(TagsCollectionBase tags, OsmGrain grain)
+        {
+            Name(tags, grain.tags);
+            Image(tags, grain.tags);
+            Website(tags, grain.tags);
+            Address(tags, grain.tags);
+            Payment(tags, grain.tags);
+            Email(tags, grain.tags);
+            Phone(tags, grain.tags);
+            Delivery(tags, grain.tags);
+            DrinkingWater(tags, grain);
+            InternetAccess(tags, grain);
+            Shower(tags, grain.tags);
+            Smoking(tags, grain.tags);
+            Takeaway(tags, grain.tags);
+            Toilets(tags, grain.tags);
+            Wheelchair(tags, grain.tags);
+            Capacity(tags, grain.tags);
+            MinAge(tags, grain.tags);
+            Rank(tags, grain.tags);
+            Fee(tags, grain.tags);
+            Charge(tags, grain.tags);
+            OpeningHours(tags, grain.tags);
+            Clothes(tags, grain.tags);
+            Cuisine(tags, grain.tags);
+            Rental(tags, grain.tags);
         }
     }
 }

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace osm
 {
@@ -12,17 +11,14 @@ namespace osm
     {
         private sealed class Item
         {
-            [JsonPropertyName("value")]
-            public string Value { get; set; }
+            public string value { get; set; }
         }
 
         private sealed class AssocPair
         {
-            [JsonPropertyName("values")]
-            public SortedSet<string> Values { get; set; }
+            public SortedSet<string> values { get; set; }
 
-            [JsonPropertyName("enrich")]
-            public SortedSet<string> Enrich { get; set; }
+            public SortedSet<string> enrich { get; set; }
         }
 
         static readonly SortedSet<string> _wi;
@@ -42,34 +38,42 @@ namespace osm
                 "healthcare",
                 "historic",
                 "public_transport",
-                "tourism",
+                "tourism"
             };
 
             _wo = new()
             {
                 "amenity",
+                "artwork_type",
+                "attraction",
                 "building",
                 "business",
                 "emergency",
                 "leisure",
-                "man_made",
+//              "man_made",
                 "natural",
                 "office",
                 "shop",
-                "sport",
+                "sport"
             };
 
-            foreach (var key in _wi.Union(_wo)) {
+            var union = _wi.Union(_wo);
+
+            foreach (var key in union) {
 
                 var path = string.Join(Path.DirectorySeparatorChar, new[] { "Resources", "tags", key + ".json" });
                 var json = File.ReadAllText(path);
-                _tags.Add(key, new(JsonSerializer.Deserialize<List<Item>>(json).Select(i => i.Value)));
+                _tags.Add(key, new(JsonSerializer.Deserialize<List<Item>>(json).Select(i => i.value)));
             }
 
             {
                 var path = string.Join(Path.DirectorySeparatorChar, new[] { "Resources", "enrich", "assoc.json" });
                 var json = File.ReadAllText(path);
                 _assoc = JsonSerializer.Deserialize<Dictionary<string, List<AssocPair>>>(json);
+
+                foreach (var item in union) {
+                    if (!_assoc.ContainsKey(item)) { _assoc[item] = new(); }
+                }
             }
         }
 
@@ -87,19 +91,16 @@ namespace osm
                     if (tags.Contains(v)) {
 
                         keywords.Add(v);
-
                         if (wk) { keywords.Add(tag); }
                     }
 
                     foreach (var a in assoc) {
 
-                        if (a.Values.Contains(v)) {
+                        if (a.values.Contains(v)) {
 
                             keywords.Add(v);
-
                             if (wk) { keywords.Add(tag); }
-
-                            foreach (var e in a.Enrich) { keywords.Add(e); }
+                            foreach (var e in a.enrich) { keywords.Add(e); }
                         }
                     }
                 }
