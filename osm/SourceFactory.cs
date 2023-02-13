@@ -39,7 +39,7 @@ namespace osm
             }
             catch (Exception) { throw new Exception($"Cannot create OSM stream from ${fStream}."); }
 
-            return new(logger, oStream);
+            return new(oStream);
         }
     }
 }

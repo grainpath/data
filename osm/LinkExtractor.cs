@@ -11,7 +11,7 @@ namespace osm
         static void Wikidata(TagsCollectionBase tags, OsmGrainLink link)
         {
             if (tags.TryGetValue("wikidata", out var v) && Regex.IsMatch(v, @"^Q[1-9][0-9]*$")) {
-                link.wikidata = @"https://www.wikidata.org/wiki/" + v;
+                link.wikidata = "https://www.wikidata.org/wiki/" + v;
             }
         }
 

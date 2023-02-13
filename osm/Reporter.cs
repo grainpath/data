@@ -4,12 +4,12 @@ using System.Text.Json;
 
 namespace osm
 {
-    internal static class Reporter
+    static class Reporter
     {
-        private static string serialize(Node node)
+        static string serialize<T>(T entity)
         {
             var opts = new JsonSerializerOptions() { WriteIndented = true };
-            return JsonSerializer.Serialize<Node>(node, opts);
+            return JsonSerializer.Serialize<T>(entity, opts);
         }
 
         public static void ReportUndefined(Node node)
@@ -20,6 +20,16 @@ namespace osm
         public static void ReportOutbound(Node node)
         {
             throw new ArgumentException($"Outbound node detected." + Environment.NewLine + $"{serialize(node)}");
+        }
+
+        public static void ReportUndefined(Way way)
+        {
+            throw new ArgumentException($"Undefined way detected." + Environment.NewLine + $"{serialize(way)}");
+        }
+
+        public static void ReportMalformed(Way way)
+        {
+            throw new ArgumentException($"Malformed way sequence detected." + Environment.NewLine + $"{serialize(way)}");
         }
     }
 }
