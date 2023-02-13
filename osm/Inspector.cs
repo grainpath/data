@@ -65,7 +65,6 @@ namespace osm
                     var p = new Point(new Position(lat, lon));
 
                     grain.location = BsonDocument.Parse(JsonSerializer.Serialize<Point>(p));
-                    grain.shape = BsonDocument.Parse(JsonSerializer.Serialize<Feature>(new(p)));
 
                     return grain;
                 }
