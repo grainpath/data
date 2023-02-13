@@ -1,4 +1,6 @@
 {
+  "aerialway":[],
+  "aeroway":[],
   "amenity":[
     {
       "values":[
@@ -175,6 +177,18 @@
       ]
     }
   ],
+  "business":[],
+  "club":[],
+  "craft":[],
+  "emergency":[],
+  "hazard":[],
+  "healthcare":[],
+  "historic":[],
+  "leisure":[],
+  "man_made":[],
+  "natural":[],
+  "office":[],
+  "public_transport":[],
   "shop":[
     {
       "values":[
@@ -372,5 +386,7 @@
         "hobbies"
       ]
     }
-  ]
+  ],
+  "sport":[],
+  "tourism":[]
 }
