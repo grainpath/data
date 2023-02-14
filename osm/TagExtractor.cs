@@ -86,22 +86,24 @@ namespace osm
             return false;
         }
 
-        static void Accommodate(TagsCollectionBase tags, string[] lst, Action<string> act)
+        static void Accommodate(TagsCollectionBase otags, OsmGrainTags gtags, string[] lst, Action<string> act)
         {
             foreach (var item in lst) {
-                if (tags.TryGetValue(item, out var v) && IsNonTrivialString(v)) {
+                if (otags.TryGetValue(item, out var v) && IsNonTrivialString(v)) {
+                    gtags.address = gtags.address ?? new();
                     act.Invoke(v);
                     return;
                 }
             }
         }
 
-        static void Pay(TagsCollectionBase tags, string[] lst, Action<bool> act)
+        static void Pay(TagsCollectionBase otags, OsmGrainTags gtags, string[] lst, Action<bool> act)
         {
             var vs = new SortedSet<string> { "yes", "only" };
 
             foreach (var item in lst) {
-                if (tags.TryGetValue(item, out var v)) {
+                if (otags.TryGetValue(item, out var v)) {
+                    gtags.payment= gtags.payment ?? new();
                     act.Invoke(vs.Contains(v));
                     return;
                 }
@@ -208,31 +210,31 @@ namespace osm
             var _h = new[] { "addr:housenumber", "addr:conscriptionnumber" };
             var _t = new[] { "addr:postcode", "addr:postbox" };
 
-            Accommodate(otags, _c, (string c) => { gtags.address.country = c; });
-            Accommodate(otags, _s, (string s) => { gtags.address.settlement = s; });
-            Accommodate(otags, _d, (string d) => { gtags.address.district = d; });
-            Accommodate(otags, _p, (string p) => { gtags.address.place = p; });
-            Accommodate(otags, _h, (string h) => { gtags.address.house = h; });
-            Accommodate(otags, _t, (string t) => { gtags.address.postal_code = t; });
+            Accommodate(otags, gtags, _c, (string c) => { gtags.address.country = c; });
+            Accommodate(otags, gtags, _s, (string s) => { gtags.address.settlement = s; });
+            Accommodate(otags, gtags, _d, (string d) => { gtags.address.district = d; });
+            Accommodate(otags, gtags, _p, (string p) => { gtags.address.place = p; });
+            Accommodate(otags, gtags, _h, (string h) => { gtags.address.house = h; });
+            Accommodate(otags, gtags, _t, (string t) => { gtags.address.postal_code = t; });
         }
 
         static void Payment(TagsCollectionBase otags, OsmGrainTags gtags)
         {
-            var _cash = new[] { "payment:cash", "payment:coins" };
-            var _card = new[] { "payment:credit_cards", "payment:debit_cards", "payment:cards" };
-            var _amex = new[] { "payment:american_express" };
-            var _jcb = new[] { "payment:jcb" };
-            var _mastercard = new[] { "payment:mastercard", "payment:maestro" };
-            var _visa = new[] { "payment:visa", "payment:visa_electron" };
-            var _crypto = new[] { "payment:cryptocurrencies", "payment:bitcoin" };
+            var _h = new[] { "payment:cash", "payment:coins" };
+            var _d = new[] { "payment:credit_cards", "payment:debit_cards", "payment:cards" };
+            var _a = new[] { "payment:american_express" };
+            var _j = new[] { "payment:jcb" };
+            var _m = new[] { "payment:mastercard", "payment:maestro" };
+            var _v = new[] { "payment:visa", "payment:visa_electron" };
+            var _c = new[] { "payment:cryptocurrencies", "payment:bitcoin" };
 
-            Pay(otags, _cash, (bool cash) => { gtags.payment.cash = cash; });
-            Pay(otags, _card, (bool card) => { gtags.payment.card = card; });
-            Pay(otags, _amex, (bool amex) => { gtags.payment.amex = amex; });
-            Pay(otags, _jcb, (bool jcb) => { gtags.payment.jcb = jcb; });
-            Pay(otags, _mastercard, (bool mastercard) => { gtags.payment.mastercard = mastercard; });
-            Pay(otags, _visa, (bool visa) => { gtags.payment.visa = visa; });
-            Pay(otags, _crypto, (bool crypto) => { gtags.payment.crypto = crypto; });
+            Pay(otags, gtags, _h, (bool h) => { gtags.payment.cash = h; });
+            Pay(otags, gtags, _d, (bool d) => { gtags.payment.card = d; });
+            Pay(otags, gtags, _a, (bool a) => { gtags.payment.amex = a; });
+            Pay(otags, gtags, _j, (bool j) => { gtags.payment.jcb = j; });
+            Pay(otags, gtags, _m, (bool m) => { gtags.payment.mastercard = m; });
+            Pay(otags, gtags, _v, (bool v) => { gtags.payment.visa = v; });
+            Pay(otags, gtags, _c, (bool c) => { gtags.payment.crypto = c; });
         }
 
         static void Email(TagsCollectionBase otags, OsmGrainTags gtags)

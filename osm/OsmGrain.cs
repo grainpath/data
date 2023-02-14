@@ -62,9 +62,11 @@ namespace osm
         [BsonIgnoreIfNull]
         public string website { get; set; }
 
-        public OsmGrainAddress address { get; set; } = new();
+        [BsonIgnoreIfNull]
+        public OsmGrainAddress address { get; set; }
 
-        public OsmGrainPayment payment { get; set; } = new();
+        [BsonIgnoreIfNull]
+        public OsmGrainPayment payment { get; set; }
 
         // contact
 
