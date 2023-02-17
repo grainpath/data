@@ -24,7 +24,7 @@ namespace osm
                 foreach (var g in _grains) {
 
                     var upsert = new ReplaceOneModel<OsmGrain>(
-                        Builders<OsmGrain>.Filter.Where(d => d.link.osm == g.link.osm), g
+                        Builders<OsmGrain>.Filter.Where(d => d.linked.osm == g.linked.osm), g
                     ) { IsUpsert = true };
 
                     bulk.Add(upsert);

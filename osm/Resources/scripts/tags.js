@@ -1,9 +1,9 @@
-const fs = require("fs");
+import * as func from "./func.js";
 
 /**
  * Extracted value should occure at least `COUNT_LIMIT` times.
  */
-const COUNT_LIMIT = 25;
+const COUNT_LIMIT = 50;
 
 /**
  * Extracted value should have lehgth between `MIN` and `MAX` chars.
@@ -66,6 +66,7 @@ const FORBIDDEN_VALUES = new Set([
   "outbuilding",
   "parking",
   "parking_entrance",
+  "parking_exit",
   "parking_position",
   "parking_space",
   "part",
@@ -160,14 +161,7 @@ async function extract(args) {
 
         const file = `../tags/${key}.json`;
 
-        // Map does not maintain lexicographic order!
-        const obj = [ ...D.keys() ]
-          .map(key => { return { value: key, count: D.get(key) }; })
-          .sort((l, r) => r.count - l.count)
-          .filter(pair => pair.count >= COUNT_LIMIT);
-
-        // write to a file
-        fs.writeFileSync(file, JSON.stringify(obj, null, 2));
+        const obj = func.map2file(D, file, COUNT_LIMIT);
 
         console.log(` > Finished processing file ${file}, extracted ${obj.length} objects.`);
       })

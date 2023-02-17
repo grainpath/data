@@ -134,7 +134,7 @@ namespace osm
         public SortedSet<string> rental { get; set; }
     }
 
-    internal class OsmGrainLink
+    internal class OsmGrainLinked
     {
         [BsonIgnoreIfNull]
         public string osm { get; set; }
@@ -153,7 +153,7 @@ namespace osm
 
         public OsmGrainTags tags { get; set; } = new();
 
-        public OsmGrainLink link { get; set; } = new();
+        public OsmGrainLinked linked { get; set; } = new();
 
         public SortedSet<string> keywords { get; set; } = new();
     }

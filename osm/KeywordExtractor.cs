@@ -37,7 +37,6 @@ namespace osm
                 "hazard",
                 "healthcare",
                 "historic",
-                "public_transport",
                 "tourism"
             };
 
@@ -53,6 +52,7 @@ namespace osm
 //              "man_made",
                 "natural",
                 "office",
+                "public_transport",
                 "shop",
                 "sport"
             };
@@ -81,14 +81,14 @@ namespace osm
         {
             if (otags.TryGetValue(tag, out var val)) {
 
-                var tags = _tags[tag];
+                var allow = _tags[tag];
                 var assoc = _assoc[tag];
 
                 var vs = val.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim());
 
                 foreach (var v in vs) {
 
-                    if (tags.Contains(v)) {
+                    if (allow.Contains(v)) {
 
                         keywords.Add(v);
                         if (wk) { keywords.Add(tag); }
@@ -96,7 +96,7 @@ namespace osm
 
                     foreach (var a in assoc) {
 
-                        if (a.values.Contains(v)) {
+                        if (a.values.Contains(v) && allow.Contains(v)) {
 
                             keywords.Add(v);
                             if (wk) { keywords.Add(tag); }
