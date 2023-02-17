@@ -1,4 +1,5 @@
-import * as func from "./func.js";
+import fs from "fs";
+import { ASSETS_BASE_ADDR } from "./const.js";
 
 /**
  * Extracted value should occure at least `COUNT_LIMIT` times.
@@ -6,12 +7,20 @@ import * as func from "./func.js";
 const COUNT_LIMIT = 50;
 
 /**
- * Extracted value should have lehgth between `MIN` and `MAX` chars.
+ * Extracted value should have lehgth at least `MIN` chars.
  */
 const LENGTH_LIMIT_MIN = 3;
+
+/**
+ * Extracted value should have lehgth at most `MAX` chars.
+ */
 const LENGTH_LIMIT_MAX = 25;
 
 const SNAKE_CASE_PATTERN = /^[a-z]+(?:[_][a-z]+)*$/;
+
+const query = ({ key }) => {
+  return `https://taginfo.openstreetmap.org/api/4/key/values?key=${key}&filter=all&lang=en&sortname=count&sortorder=desc&qtype=value&format=json`;
+};
 
 const FORBIDDEN_VALUES = new Set([
   "abandoned",
@@ -133,10 +142,9 @@ async function extract(args) {
 
     console.log(` > Processing key ${key}.`);
 
-    const D = new Map();
-    const Q = `https://taginfo.openstreetmap.org/api/4/key/values?key=${key}&filter=all&lang=en&sortname=count&sortorder=desc&qtype=value&format=json`;
+    const dict = new Map();
 
-    await fetch(Q)
+    await fetch(query({ key: key }))
       .then(res => res.json())
       .then(res => {
 
@@ -152,16 +160,23 @@ async function extract(args) {
             })
             .forEach(value => {
 
-              if (!D.has(value)) { D.set(value, 0); }
-              D.set(value, D.get(value) + item.count);
+              if (!dict.has(value)) { dict.set(value, 0); }
+              dict.set(value, dict.get(value) + item.count);
             });
         });
       })
       .then(() => {
 
-        const file = `../tags/${key}.json`;
+        const file = `${ASSETS_BASE_ADDR}/tags/${key}.json`;
 
-        const obj = func.map2file(D, file, COUNT_LIMIT);
+        // Map does not maintain lexicographic order!
+        let obj = [ ...dict.keys() ]
+          .map(key => { return { value: key, count: dict.get(key) }; })
+          .sort((l, r) => r.count - l.count)
+          .filter(pair => pair.count >= COUNT_LIMIT);
+
+        // write to a file
+        fs.writeFileSync(file, JSON.stringify(obj, null, 2));
 
         console.log(` > Finished processing file ${file}, extracted ${obj.length} objects.`);
       })

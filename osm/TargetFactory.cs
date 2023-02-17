@@ -7,7 +7,6 @@ namespace osm
     internal static class TargetFactory
     {
         private static readonly string _conn = "GRAINPATH_DBM_CONN";
-        private static readonly string _database = "grainpath";
 
         public static Target GetInstance(ILogger logger)
         {
@@ -22,7 +21,7 @@ namespace osm
 
             try {
                 var client = new MongoClient(new MongoUrl(conn));
-                database = client.GetDatabase(_database);
+                database = client.GetDatabase(Constants.MONGO_DATABASE);
             }
             catch (Exception) { throw new Exception("Failed to get database instance from the given connection string."); }
 

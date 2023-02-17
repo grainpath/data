@@ -22,6 +22,8 @@ namespace osm
             return 0.5 * ar;
         }
 
+        public static bool IsCounterClockwise(List<Point> polygon) => SignedArea(polygon) > 0.0;
+
         public static Point Centroid(List<Point> polygon)
         {
             double ar = 0.0, cx = 0.0, cy = 0.0;
@@ -42,7 +44,5 @@ namespace osm
 
             return new(new Position(cy / (6.0 * ar), cx / (6.0 * ar)));
         }
-
-        public static bool IsCounterClockwise(List<Point> polygon) => SignedArea(polygon) > 0.0;
     }
 }

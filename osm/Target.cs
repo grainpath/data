@@ -6,8 +6,6 @@ namespace osm
 {
     class Target
     {
-        private static readonly string _coll = "pois";
-
         private readonly ILogger _logger;
         private readonly IMongoDatabase _database;
         private readonly List<OsmGrain> _grains = new();
@@ -16,7 +14,7 @@ namespace osm
         {
             try {
 
-                var coll = _database.GetCollection<OsmGrain>(_coll);
+                var coll = _database.GetCollection<OsmGrain>(Constants.MONGO_GRAIN_COLLECTION);
                 var opts = new UpdateOptions { IsUpsert = true };
 
                 var bulk = new List<WriteModel<OsmGrain>>();

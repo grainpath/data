@@ -60,7 +60,7 @@ namespace osm
                 if (grain.keywords.Count > 0) {
 
                     TagExtractor.Extract(node.Tags, grain);
-                    LinkExtractor.Extract(node, grain.linked);
+                    LinkedExtractor.Extract(node, grain.linked);
 
                     var p = new Point(new Position(lat, lon));
 
@@ -108,7 +108,7 @@ namespace osm
                 if (grain.keywords.Count > 0) {
 
                     TagExtractor.Extract(way.Tags, grain);
-                    LinkExtractor.Extract(way, grain.linked);
+                    LinkedExtractor.Extract(way, grain.linked);
 
                     /* Note that both IsCounterClockwise and Centroid
                      * use closedness of the shape verified above. */

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p ../tags
+mkdir -p ../assets/tags
 
 node tags.js \
   aerialway \

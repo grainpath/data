@@ -4,7 +4,7 @@ using OsmSharp.Tags;
 
 namespace osm
 {
-    class LinkExtractor
+    class LinkedExtractor
     {
         static readonly string _url = "https://www.openstreetmap.org/";
 

@@ -21,17 +21,17 @@ namespace osm
         static readonly SortedSet<string> _cuisine;
         static readonly SortedSet<string> _rental;
 
-        static SortedSet<string> GetDictionary(string file)
+        static SortedSet<string> GetCollection(string file)
         {
-            var json = File.ReadAllText(string.Join(Path.DirectorySeparatorChar, new[] { "Resources", "tags", file + ".json" }));
+            var json = File.ReadAllText(string.Join(Path.DirectorySeparatorChar, new[] { Constants.ASSETS_BASE_ADDR, "tags", file + ".json" }));
             return new(JsonSerializer.Deserialize<List<Item>>(json).Select(i => i.value));
         }
 
         static TagExtractor()
         {
-            _clothes = GetDictionary("clothes");
-            _cuisine = GetDictionary("cuisine");
-            _rental = GetDictionary("rental");
+            _clothes = GetCollection("clothes");
+            _cuisine = GetCollection("cuisine");
+            _rental = GetCollection("rental");
         }
 
         // supporting functions
@@ -42,8 +42,7 @@ namespace osm
         static List<string> Divide(string s)
             => s.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
 
-        static bool IsNonTrivialString(string s)
-        => s is not null && s != string.Empty;
+        static bool IsNonTrivialString(string s) => s is not null && s != string.Empty;
 
         static bool IsNonTrivialStringSequence(List<string> seq)
         {
@@ -437,9 +436,8 @@ namespace osm
             var vs = new SortedSet<string>() { "yes", "only", "limited" };
 
             if (otags.TryGetValue("cuisine", out v)) {
-                Divide(v)
-                    .Where(item => _cuisine.Contains(item))
-                    .Select(item => res.Add(item));
+                var items = Divide(v).Where(item => _cuisine.Contains(item));
+                foreach (var item in items) { res.Add(item); }
             }
 
             if (otags.TryGetValue("diet:vegan", out v) && vs.Contains(v)) {

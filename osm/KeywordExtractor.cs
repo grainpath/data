@@ -61,13 +61,13 @@ namespace osm
 
             foreach (var key in union) {
 
-                var path = string.Join(Path.DirectorySeparatorChar, new[] { "Resources", "tags", key + ".json" });
+                var path = string.Join(Path.DirectorySeparatorChar, new[] { Constants.ASSETS_BASE_ADDR, "tags", key + ".json" });
                 var json = File.ReadAllText(path);
                 _tags.Add(key, new(JsonSerializer.Deserialize<List<Item>>(json).Select(i => i.value)));
             }
 
             {
-                var path = string.Join(Path.DirectorySeparatorChar, new[] { "Resources", "enrich", "assoc.json" });
+                var path = string.Join(Path.DirectorySeparatorChar, new[] { Constants.RESOURCES_BASE_ADDR, "enrich", "assoc.json" });
                 var json = File.ReadAllText(path);
                 _assoc = JsonSerializer.Deserialize<Dictionary<string, List<AssocPair>>>(json);
 

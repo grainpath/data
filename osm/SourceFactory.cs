@@ -9,7 +9,7 @@ namespace osm
     {
         public static Source GetInstance(ILogger logger, string file)
         {
-            var path = string.Join(Path.DirectorySeparatorChar, new[] { "Resources", "maps", file });
+            var path = string.Join(Path.DirectorySeparatorChar, new[] { Constants.RESOURCES_BASE_ADDR, "maps", file });
 
             FileStream fStream;
 
