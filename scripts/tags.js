@@ -1,22 +1,13 @@
 import fs from "fs";
-import { ASSETS_BASE_ADDR } from "./const.js";
+import {
+  ASSETS_BASE_ADDR,
+  isValidKeyword,
+} from "./const.js";
 
 /**
- * Extracted value should occure at least `COUNT_LIMIT` times.
+ * Extracted value should occur at least `COUNT_LIMIT` times.
  */
 const COUNT_LIMIT = 50;
-
-/**
- * Extracted value should have lehgth at least `MIN` chars.
- */
-const LENGTH_LIMIT_MIN = 3;
-
-/**
- * Extracted value should have lehgth at most `MAX` chars.
- */
-const LENGTH_LIMIT_MAX = 25;
-
-const SNAKE_CASE_PATTERN = /^[a-z]+(?:[_][a-z]+)*$/;
 
 const query = ({ key }) => {
   return `https://taginfo.openstreetmap.org/api/4/key/values?key=${key}&filter=all&lang=en&sortname=count&sortorder=desc&qtype=value&format=json`;
@@ -154,12 +145,8 @@ async function extract(args) {
           item.value
             .split(/[\s;,]+/)
             .map(value => value.toLowerCase().replace("-", "_"))
-            .filter(value => {
-              return value.match(SNAKE_CASE_PATTERN) && !FORBIDDEN_VALUES.has(value)
-                && value.length >= LENGTH_LIMIT_MIN && value.length <= LENGTH_LIMIT_MAX;
-            })
+            .filter(value => isValidKeyword(value) && !FORBIDDEN_VALUES.has(value))
             .forEach(value => {
-
               if (!dict.has(value)) { dict.set(value, 0); }
               dict.set(value, dict.get(value) + item.count);
             });

@@ -1,5 +1,6 @@
 import { MongoClient } from "mongodb";
 import {
+  MONGO_CONNECTION_STRING,
   MONGO_DATABASE,
   MONGO_GRAIN_COLLECTION,
   MONGO_INDEX_COLLECTION
@@ -9,7 +10,7 @@ import {
  * Extracts existing unique values for a given item.
  */
 
-const client = new MongoClient(process.env.GRAINPATH_DBM_CONN);
+const client = new MongoClient(MONGO_CONNECTION_STRING);
 
 async function construct() {
 
@@ -60,7 +61,7 @@ async function construct() {
       console.log(`Finished index @${target}, total ${obj.length} items extracted.`);
     }
   }
-
+  catch (err) { console.log(err); }
   finally { await client.close(); }
 }
 

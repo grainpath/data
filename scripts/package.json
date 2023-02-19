@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
+    "jsonld": "^8.1.0",
     "mongodb": "^5.0.1"
   }
 }
