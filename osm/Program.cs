@@ -22,27 +22,16 @@ namespace osm
 
             log.LogInformation("File {0} is being processed...", opt.File);
 
-            long step = 0;
-
             try {
-
                 var source = SourceFactory.GetInstance(log, opt.File);
                 var target = TargetFactory.GetInstance(log);
 
                 foreach (var grain in source) {
                     target.Consume(grain);
-
-                    ++step;
-
-                    if (step % 1000 == 0) {
-                        log.LogInformation("Still working... {0} objects already processed.", step);
-                    }
                 }
                 target.Complete();
             }
             catch (Exception ex) { log.LogError(ex.Message); }
-
-            log.LogInformation("Finished file {0}, processed {1} objects.", opt.File, step);
         }
     }
 }
