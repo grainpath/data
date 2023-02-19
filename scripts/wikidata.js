@@ -33,34 +33,34 @@ PREFIX schema: <http://schema.org/>
 PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 CONSTRUCT {
-  ?entity
+  ?wikidataId
     dita:keyword ?keyword ;
     rdfs:label ?name ;
     schema:description ?description ;
     wdt:P18 ?image ;
-    wdt:P1566 ?geonames .
+    wdt:P1566 ?geoNamesId .
 }
 WHERE {
-  VALUES ?entity { ${payload} }
+  VALUES ?wikidataId { ${payload} }
   OPTIONAL {
-    ?entity wdt:P31 ?instanceOf .
+    ?wikidataId wdt:P31 ?instanceOf .
     ?instanceOf rdfs:label ?keywordLit .
     FILTER(LANGMATCHES(LANG(?keywordLit), "en"))
     BIND(STR(?keywordLit) AS ?keyword)
   }
   OPTIONAL { 
-    ?entity rdfs:label ?nameLit .
+    ?wikidataId rdfs:label ?nameLit .
     FILTER(LANGMATCHES(LANG(?nameLit), "en"))
     BIND(STR(?nameLit) AS ?name)
   }
   OPTIONAL {
-    ?entity schema:description ?descriptionLit .
+    ?wikidataId schema:description ?descriptionLit .
     FILTER(LANGMATCHES(LANG(?descriptionLit), "en"))
     BIND(STR(?descriptionLit) AS ?description)
   }
-  OPTIONAL { ?entity wdt:P18 ?image . }
+  OPTIONAL { ?wikidataId wdt:P18 ?image . }
   OPTIONAL {
-    ?entity wdt:P1566 ?geonamesId .
+    ?wikidataId wdt:P1566 ?geoNamesId .
   }
 }`;
 
@@ -92,12 +92,12 @@ function constructFromJson(json) {
         : [ entity.keywords ];
 
       entity.keywords = entity.keywords.map((keyword) => {
-        keyword = keyword.replace(' ', '_').toLowerCase();
+        keyword = keyword.toLowerCase().replace(' ', '_');
         return (isValidKeyword(keyword)) ? keyword : undefined;
       })
       .filter((keyword) => keyword !== undefined);
 
-      entity.keywords = [ ...new Set(entity.keywords) ].sort();
+      entity.keywords = [ ...new Set(entity.keywords) ];
     }
 
     entity.wikidata = entity.wikidata.substring(3);
