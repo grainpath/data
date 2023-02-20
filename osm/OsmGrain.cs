@@ -14,12 +14,12 @@ namespace osm
     {
         public GeoJsonPoint(float lon, float lat) { coordinates = new() { lon, lat }; }
 
-        public string type { get; } = "Point";
+        public string type { get; set; } = "Point";
 
-        public List<float> coordinates { get; }
+        public List<float> coordinates { get; set; }
     }
 
-    internal class OsmGrainAddress
+    internal sealed class OsmGrainAddress
     {
         [BsonIgnoreIfNull]
         public string country { get; set; }
@@ -40,7 +40,7 @@ namespace osm
         public string postal_code { get; set; }
     }
 
-    internal class OsmGrainPayment
+    internal sealed class OsmGrainPayment
     {
         [BsonIgnoreIfNull]
         public bool? cash { get; set; }
@@ -64,7 +64,7 @@ namespace osm
         public bool? crypto { get; set; }
     }
 
-    internal class OsmGrainTags
+    internal sealed class OsmGrainTags
     {
         // info
 
@@ -149,7 +149,7 @@ namespace osm
         public SortedSet<string> rental { get; set; }
     }
 
-    internal class OsmGrainLinked
+    internal sealed class OsmGrainLinked
     {
         [BsonIgnoreIfNull]
         public string osm { get; set; }
@@ -158,7 +158,7 @@ namespace osm
         public string wikidata { get; set; }
     }
 
-    internal class OsmGrain
+    internal sealed class OsmGrain
     {
         [BsonIgnoreIfNull]
         public List<Point> polygon { get; set; }
