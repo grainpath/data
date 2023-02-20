@@ -11,6 +11,7 @@ const WIKIDATA_ACCEPT_CONTENT = "application/n-quads";
 
 const WIKIDATA_JSONLD_CONTEXT = {
   "my": "http://example.com/",
+  "wd": "http://www.wikidata.org/entity/",
   "name": "my:name",
   "description": "my:description",
   "keywords": "my:keywords",
@@ -154,7 +155,7 @@ async function wikidata() {
             "linked.geonames": obj.geonames
           },
           $addToSet: {
-            "keywords": obj.keywords
+            "keywords": { $each: obj.keywords }
           }
         };
 

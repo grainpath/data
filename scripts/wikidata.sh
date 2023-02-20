@@ -1,3 +1,3 @@
 #!/bin/bash
 
-node wikidata.js
+node wikidata.mjs
