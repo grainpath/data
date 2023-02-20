@@ -1,32 +1,11 @@
-using GeoJSON.Text.Feature;
-using GeoJSON.Text.Geometry;
-using MongoDB.Bson;
 using OsmSharp;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
 
 namespace osm
 {
     internal static class Inspector
     {
-        private sealed class Pt
-        {
-            public double Lon { get; set; }
-            public double Lat { get; set; }
-        }
-
-        public static bool Bounds(double lon, double lat)
-        {
-            return lon >= -_boundLon && lon <= +_boundLon
-                && lat >= -_boundLat && lat <= +_boundLat;
-        }
-
-        // EPSG:3857 bounds, see https://epsg.io/3857
-        private static readonly double _boundLon = 180.0;
-        private static readonly double _boundLat = 85.06;
-
-        private static readonly Dictionary<long, Pt> _nodes = new();
+        private static readonly Dictionary<long, Point> _nodes = new();
 
         public static OsmGrain Inspect(Node node)
         {
@@ -41,14 +20,14 @@ namespace osm
 
                 // extract and verify position
 
-                var lon = node.Longitude.Value;
-                var lat = node.Latitude.Value;
+                var lon = (float)node.Longitude.Value;
+                var lat = (float)node.Latitude.Value;
 
-                if (!Bounds(lon, lat)) { Reporter.ReportOutbound(node); }
+                if (!CrsEpsg3857.IsWithin(lon, lat)) { Reporter.ReportOutbound(node); }
 
                 // keep node for later usage
 
-                _nodes.Add(node.Id.Value, new() { Lon = lon, Lat = lat });
+                _nodes.Add(node.Id.Value, new() { lon = lon, lat = lat });
 
                 if (node.Tags is null || node.Tags.Count == 0) { return null; }
 
@@ -62,9 +41,7 @@ namespace osm
                     TagExtractor.Extract(node.Tags, grain);
                     LinkedExtractor.Extract(node, grain.linked);
 
-                    var p = new Point(new Position(lat, lon));
-
-                    grain.location = BsonDocument.Parse(JsonSerializer.Serialize<Point>(p));
+                    grain.location = new GeoJsonPoint(lon, lat);
 
                     return grain;
                 }
@@ -79,7 +56,7 @@ namespace osm
 
             foreach (var id in way.Nodes) {
                 if (!_nodes.TryGetValue(id, out var node)) { return false; }
-                sequence.Add(new(new Position(node.Lat, node.Lon)));
+                sequence.Add(new() { lon = node.lon, lat = node.lat });
             }
 
             return true;
@@ -91,9 +68,7 @@ namespace osm
 
                 // check if the way is properly defined
 
-                var d = way.Id is not null && way.Nodes is not null && way.Nodes.Length >= 2;
-
-                if (!d) { Reporter.ReportUndefined(way); }
+                if (way.Id is null || way.Nodes is null) { Reporter.ReportUndefined(way); }
 
                 // small or open ways are skipped, closed polygons pass
 
@@ -101,7 +76,7 @@ namespace osm
 
                 var grain = new OsmGrain();
 
-                if (!TryGetSequence(way, out var seq)) { Reporter.ReportMalformed(way); }
+                if (!TryGetSequence(way, out var seq)) { return null; }
 
                 KeywordExtractor.Extract(way.Tags, grain.keywords);
 
@@ -117,14 +92,10 @@ namespace osm
                      * see https://www.rfc-editor.org/rfc/rfc7946#appendix-B.1! */
 
                     if (!Cartesian.IsCounterClockwise(seq)) { seq.Reverse(); }
+                    grain.polygon = seq;
 
-                    grain.location = BsonDocument.Parse(JsonSerializer.Serialize<Point>(Cartesian.Centroid(seq)));
-
-                    var polygon = new Polygon(new List<LineString>()
-                    {
-                        new LineString(seq.Select(p => p.Coordinates))
-                    });
-                    grain.shape = BsonDocument.Parse(JsonSerializer.Serialize<Feature>(new Feature(polygon)));;
+                    var centroid = Cartesian.Centroid(seq);
+                    grain.location = new(centroid.lon, centroid.lat);
 
                     return grain;
                 }

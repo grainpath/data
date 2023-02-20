@@ -1,4 +1,3 @@
-using GeoJSON.Text.Geometry;
 using System.Collections.Generic;
 
 namespace osm
@@ -7,14 +6,14 @@ namespace osm
     {
         private static double SignedArea(List<Point> polygon)
         {
-            var ar = 0.0;
+            var ar = 0.0f;
 
             for (int i = 0; i < polygon.Count - 1; ++i) {
-                var p0 = polygon[i].Coordinates;
-                var p1 = polygon[i + 1].Coordinates;
+                var p0 = polygon[i];
+                var p1 = polygon[i + 1];
 
-                var (x0, y0) = (p0.Longitude, p0.Latitude);
-                var (x1, y1) = (p1.Longitude, p1.Latitude);
+                var (x0, y0) = (p0.lon, p0.lat);
+                var (x1, y1) = (p1.lon, p1.lat);
 
                 ar += x0 * y1 - y0 * x1;
             }
@@ -26,14 +25,14 @@ namespace osm
 
         public static Point Centroid(List<Point> polygon)
         {
-            double ar = 0.0, cx = 0.0, cy = 0.0;
+            float ar = 0.0f, cx = 0.0f, cy = 0.0f;
 
             for (int i = 0; i < polygon.Count - 1; ++i) {
-                var p0 = polygon[i].Coordinates;
-                var p1 = polygon[i + 1].Coordinates;
+                var p0 = polygon[i];
+                var p1 = polygon[i + 1];
 
-                var (x0, y0) = (p0.Longitude, p0.Latitude);
-                var (x1, y1) = (p1.Longitude, p1.Latitude);
+                var (x0, y0) = (p0.lon, p0.lat);
+                var (x1, y1) = (p1.lon, p1.lat);
 
                 ar += x0 * y1 - y0 * x1;
 
@@ -42,7 +41,7 @@ namespace osm
                 cy += (y0 + y1) * im;
             }
 
-            return new(new Position(cy / (6.0 * ar), cx / (6.0 * ar)));
+            return new() { lon = cx / (3.0f * ar), lat = cy / (3.0f * ar) };
         }
     }
 }

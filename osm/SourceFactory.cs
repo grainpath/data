@@ -1,13 +1,15 @@
 using Microsoft.Extensions.Logging;
 using OsmSharp.Streams;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace osm
 {
     static class SourceFactory
     {
-        public static Source GetInstance(ILogger logger, string file)
+        private static OsmStreamSource toStream(string file)
         {
             var path = string.Join(Path.DirectorySeparatorChar, new[] { Constants.RESOURCES_BASE_ADDR, "maps", file });
 
@@ -32,14 +34,30 @@ namespace osm
                 throw new Exception($"Name of the file should have .pbf or .osm extension.");
             }
 
-            OsmStreamSource oStream;
-
             try {
-                oStream = func.Invoke();
+                return func.Invoke();
             }
             catch (Exception) { throw new Exception($"Cannot create OSM stream from ${fStream}."); }
+        }
 
-            return new(logger, oStream);
+        private static (float, float, float, float) toBbox(List<string> bbox)
+        {
+            if (bbox is null) { return (-CrsEpsg3857.BoundLon, +CrsEpsg3857.BoundLat, +CrsEpsg3857.BoundLon, -CrsEpsg3857.BoundLat); }
+
+            var errMsg = "Bbox shall be in the format left;top;right;bottom within EPSG:3857.";
+
+            if (bbox.Count != 4) { throw new Exception(errMsg); }
+            var coords = bbox.Select(t => float.Parse(t)).ToList();
+
+            return (Math.Min(coords[0], coords[2]),
+                    Math.Max(coords[1], coords[3]),
+                    Math.Max(coords[0], coords[2]),
+                    Math.Min(coords[1], coords[3]));
+        }
+
+        public static Source GetInstance(ILogger logger, string file, List<string> bbox)
+        {
+            return new(logger, toStream(file), toBbox(bbox));
         }
     }
 }

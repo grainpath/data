@@ -1,6 +1,8 @@
-﻿using CommandLine;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using CommandLine;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace osm
 {
@@ -10,6 +12,9 @@ namespace osm
         {
             [Option("file", Required = true)]
             public string File { get; set; }
+
+            [Option("bbox", Required = false)]
+            public IEnumerable<string> Bbox { get; set; }
         }
 
         static void Main(string[] args)
@@ -23,7 +28,7 @@ namespace osm
             log.LogInformation("File {0} is being processed...", opt.File);
 
             try {
-                var source = SourceFactory.GetInstance(log, opt.File);
+                var source = SourceFactory.GetInstance(log, opt.File, opt.Bbox.ToList());
                 var target = TargetFactory.GetInstance(log);
 
                 foreach (var grain in source) {

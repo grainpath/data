@@ -26,10 +26,5 @@ namespace osm
         {
             throw new ArgumentException($"Undefined way detected." + Environment.NewLine + $"{serialize(way)}");
         }
-
-        public static void ReportMalformed(Way way)
-        {
-            throw new ArgumentException($"Malformed way sequence detected." + Environment.NewLine + $"{serialize(way)}");
-        }
     }
 }

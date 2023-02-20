@@ -1,9 +1,24 @@
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Collections.Generic;
 
 namespace osm
 {
+    internal sealed class Point
+    {
+        public float lon { get; set; }
+
+        public float lat { get; set; }
+    }
+
+    internal sealed class GeoJsonPoint
+    {
+        public GeoJsonPoint(float lon, float lat) { coordinates = new() { lon, lat }; }
+
+        public string type { get; } = "Point";
+
+        public List<float> coordinates { get; }
+    }
+
     internal class OsmGrainAddress
     {
         [BsonIgnoreIfNull]
@@ -146,10 +161,9 @@ namespace osm
     internal class OsmGrain
     {
         [BsonIgnoreIfNull]
-        public BsonDocument shape { get; set; }
+        public List<Point> polygon { get; set; }
 
-        [BsonIgnoreIfNull]
-        public BsonDocument location { get; set; }
+        public GeoJsonPoint location { get; set; }
 
         public OsmGrainTags tags { get; set; } = new();
 

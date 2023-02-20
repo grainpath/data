@@ -10,18 +10,29 @@ namespace osm
 {
     internal class Source : IEnumerable<OsmGrain>
     {
+        float l, t, r, b;
         private readonly ILogger _logger;
         private readonly OsmStreamSource _stream;
 
-        public Source(ILogger logger, OsmStreamSource stream)
+        private bool withinBbox(Node node)
         {
-            _logger = logger; _stream = stream;
+            var lon = node.Longitude; var lat = node.Latitude;
+
+            return lon is not null && (float)lon.Value >= l && (float)lon.Value <= r
+                && lat is not null && (float)lat.Value >= b && (float)lat.Value <= t;
+        }
+
+        public Source(ILogger logger, OsmStreamSource stream, (float, float, float, float) bbox)
+        {
+            _logger = logger; _stream = stream; (l, t, r, b) = bbox;
         }
 
         public IEnumerator<OsmGrain> GetEnumerator()
         {
             var source = from item in _stream
-                         where item.Type != OsmGeoType.Relation select item;
+                         where (item.Type == OsmGeoType.Way  ||
+                                item.Type == OsmGeoType.Node && withinBbox(item as Node))
+                         select item;
 
             long step = 0;
 
@@ -29,9 +40,8 @@ namespace osm
 
                 ++step;
 
-                if (step % 1_000_000 == 0) { GC.Collect(2); }
-
                 if (step % 10_000_000 == 0) {
+                    GC.Collect(2);
                     _logger.LogInformation("Still working... {0} objects already processed.", step);
                 }
 
