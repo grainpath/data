@@ -10,23 +10,19 @@ import {
 const WIKIDATA_ACCEPT_CONTENT = "application/n-quads";
 
 const WIKIDATA_JSONLD_CONTEXT = {
-  "dita": "http://purl.org/dita/ns#",
-  "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-  "schema": "http://schema.org/",
-  "wd": "http://www.wikidata.org/entity/",
-  "wdt": "http://www.wikidata.org/prop/direct/",
-  "name": "rdfs:label",
-  "description": "schema:description",
-  "keywords": "dita:keyword",
-  "image": "wdt:P18",
-  "location": "wdt:P625",
-  "geonames": "wdt:P1566",
+  "my": "http://example.com/",
+  "name": "my:name",
+  "description": "my:description",
+  "keywords": "my:keywords",
+  "image": "my:image",
+  "geonames": "my:geonames",
   "wikidata": "@id"
 };
 
 const WIKIDATA_SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
 
 const wikidataQuery = (payload) => `
+PREFIX my: <http://example.com/>
 PREFIX dita: <http://purl.org/dita/ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX schema: <http://schema.org/>
@@ -34,11 +30,11 @@ PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 CONSTRUCT {
   ?wikidataId
-    dita:keyword ?keyword ;
-    rdfs:label ?name ;
-    schema:description ?description ;
-    wdt:P18 ?image ;
-    wdt:P1566 ?geoNamesId .
+    my:name ?name ;
+    my:description ?description ;
+    my:keywords ?keyword ;
+    my:image ?image ;
+    my:geonames ?geoNamesId .
 }
 WHERE {
   VALUES ?wikidataId { ${payload} }
@@ -58,7 +54,10 @@ WHERE {
     FILTER(LANGMATCHES(LANG(?descriptionLit), "en"))
     BIND(STR(?descriptionLit) AS ?description)
   }
-  OPTIONAL { ?wikidataId wdt:P18 ?image . }
+  OPTIONAL {
+    ?wikidataId wdt:P18 ?imageUrl .
+    BIND(STR(?imageUrl) AS ?image)
+  }
   OPTIONAL {
     ?wikidataId wdt:P1566 ?geoNamesId .
   }
@@ -108,7 +107,7 @@ function constructFromJson(json) {
     // tags
     obj.name = get(entity.name);
     obj.description = get(entity.description);
-    obj.image = get(entity.image)?.wikidata;
+    obj.image = get(entity.image);
 
     // linked
     obj.wikidata = entity.wikidata;
@@ -118,9 +117,6 @@ function constructFromJson(json) {
   });
 }
 
-/**
- * Enrich known wiki items.
- */
 async function wikidata() {
 
   const client = new MongoClient(MONGO_CONNECTION_STRING);
@@ -136,35 +132,42 @@ async function wikidata() {
       .toArray()
 
     console.log(`Constructed payload with ${payload.length} items.`);
-    payload = payload.map((item) => "wd:" + item.linked.wikidata).join(' ');
+    payload = payload.map((item) => "wd:" + item.linked.wikidata);
 
-    const lst = await fetchFromWikidata(payload)
-      .then((jsn) => constructFromJson(jsn));
+    while (payload.length) {
 
-    console.log(`Fetched ${lst.length} items from Wikidata.`)
+      const window = 100;
 
-    for (const obj of lst) {
+      const lst = await fetchFromWikidata(payload.slice(0, window).join(' '))
+        .then((jsn) => constructFromJson(jsn));
 
-      const filter = { "linked.wikidata": { $eq: obj.wikidata } };
-      const update = {
-        $set: {
-          "tags.name": obj.name,
-          "tags.description": obj.description,
-          "tags.image": obj.image,
-          "linked.geonames": obj.geonames
-        },
-        $addToSet: {
-          "keywords": obj.keywords
-        }
-      };
+      console.log(` > Fetched ${lst.length} items from Wikidata.`)
 
-      await client
-        .db(MONGO_DATABASE)
-        .collection(MONGO_GRAIN_COLLECTION)
-        .updateMany(filter, update, { ignoreUndefined: true });
+      for (const obj of lst) {
+
+        const filter = { "linked.wikidata": { $eq: obj.wikidata } };
+        const update = {
+          $set: {
+            "tags.name": obj.name,
+            "tags.description": obj.description,
+            "tags.image": obj.image,
+            "linked.geonames": obj.geonames
+          },
+          $addToSet: {
+            "keywords": obj.keywords
+          }
+        };
+
+        await client
+          .db(MONGO_DATABASE)
+          .collection(MONGO_GRAIN_COLLECTION)
+          .updateMany(filter, update, { ignoreUndefined: true });
+      }
+
+      payload = payload.slice(window);
     }
 
-    console.log(`Finished processing ${lst.length} items.`);
+    console.log(`Finished processing Wikidata items.`);
   }
   catch (err) { console.log(err); }
   finally { await client.close(); }
