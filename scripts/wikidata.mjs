@@ -27,8 +27,8 @@ const WIKIDATA_JSONLD_CONTEXT = {
     "@id": "my:description",
     "@container": "@language"
   },
-  "keyword": {
-    "@id": "my:keyword",
+  "keywords": {
+    "@id": "my:keywords",
     "@container": "@language"
   },
   "image": {
@@ -54,7 +54,7 @@ CONSTRUCT {
   ?wikidataId
     my:name ?name ;
     my:description ?description ;
-    my:keyword ?keyword ;
+    my:keywords ?keyword ;
     my:image ?image ;
     my:geonames ?geoNamesId .
 }
