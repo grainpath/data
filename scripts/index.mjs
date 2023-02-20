@@ -4,7 +4,7 @@ import {
   MONGO_DATABASE,
   MONGO_GRAIN_COLLECTION,
   MONGO_INDEX_COLLECTION
-} from "./const.js";
+} from "./const.cjs";
 
 /**
  * Extracts existing unique values for a given item.
