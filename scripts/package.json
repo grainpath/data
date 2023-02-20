@@ -2,6 +2,10 @@
   "type": "module",
   "dependencies": {
     "jsonld": "^8.1.0",
-    "mongodb": "^5.0.1"
+    "mongodb": "^5.0.1",
+    "rdf-parse": "^2.3.0",
+    "rdf-serialize": "^2.2.1",
+    "stream-to-string": "^1.2.1",
+    "streamify-string": "^1.0.1"
   }
 }
