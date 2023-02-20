@@ -42,7 +42,9 @@ namespace osm
 
         private static (float, float, float, float) toBbox(List<string> bbox)
         {
-            if (bbox is null) { return (-CrsEpsg3857.BoundLon, +CrsEpsg3857.BoundLat, +CrsEpsg3857.BoundLon, -CrsEpsg3857.BoundLat); }
+            if (bbox is null || bbox.Count == 0) {
+                return (-CrsEpsg3857.BoundLon, +CrsEpsg3857.BoundLat, +CrsEpsg3857.BoundLon, -CrsEpsg3857.BoundLat);
+            }
 
             var errMsg = "Bbox shall be in the format left;top;right;bottom within EPSG:3857.";
 

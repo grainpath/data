@@ -25,7 +25,7 @@ namespace osm
             }
             catch (Exception) { throw new Exception("Failed to get database instance from the given connection string."); }
 
-            return new MockTarget(logger, database);
+            return new MongoTarget(logger, database);
         }
     }
 }
