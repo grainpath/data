@@ -1,22 +1,43 @@
 import jsonld from "jsonld";
 import { MongoClient } from "mongodb";
+
 import {
   isValidKeyword,
   MONGO_CONNECTION_STRING,
-  MONGO_DATABASE,
-  MONGO_GRAIN_COLLECTION
-} from "./const.js";
+} from "./const.cjs";
+
+import {
+  getPayload,
+  reportFetchedItems,
+  reportFinished,
+  reportPayload,
+  writeToDatabase
+} from "./share.cjs";
 
 const WIKIDATA_ACCEPT_CONTENT = "application/n-quads";
 
 const WIKIDATA_JSONLD_CONTEXT = {
   "my": "http://example.com/",
   "wd": "http://www.wikidata.org/entity/",
-  "name": "my:name",
-  "description": "my:description",
-  "keywords": "my:keywords",
-  "image": "my:image",
-  "geonames": "my:geonames",
+  "name": {
+    "@id": "my:name",
+    "@container": "@language"
+  },
+  "description": {
+    "@id": "my:description",
+    "@container": "@language"
+  },
+  "keyword": {
+    "@id": "my:keyword",
+    "@container": "@language"
+  },
+  "image": {
+    "@id": "my:image",
+    "@type": "@id"
+  },
+  "geonames": {
+    "@id": "my:geonames"
+  },
   "wikidata": "@id"
 };
 
@@ -33,35 +54,27 @@ CONSTRUCT {
   ?wikidataId
     my:name ?name ;
     my:description ?description ;
-    my:keywords ?keyword ;
+    my:keyword ?keyword ;
     my:image ?image ;
     my:geonames ?geoNamesId .
 }
 WHERE {
   VALUES ?wikidataId { ${payload} }
+  OPTIONAL { 
+    ?wikidataId rdfs:label ?name .
+    FILTER(LANG(?name) = "en" && STRLEN(STR(?name)) > 0)
+  }
+  OPTIONAL {
+    ?wikidataId schema:description ?description .
+    FILTER(LANG(?description) = "en" && STRLEN(STR(?description)) > 0)
+  }
   OPTIONAL {
     ?wikidataId wdt:P31 ?instanceOf .
-    ?instanceOf rdfs:label ?keywordLit .
-    FILTER(LANGMATCHES(LANG(?keywordLit), "en"))
-    BIND(STR(?keywordLit) AS ?keyword)
+    ?instanceOf rdfs:label ?keyword .
+    FILTER(LANG(?keyword) = "en" && STRLEN(STR(?keyword)) > 0)
   }
-  OPTIONAL { 
-    ?wikidataId rdfs:label ?nameLit .
-    FILTER(LANGMATCHES(LANG(?nameLit), "en"))
-    BIND(STR(?nameLit) AS ?name)
-  }
-  OPTIONAL {
-    ?wikidataId schema:description ?descriptionLit .
-    FILTER(LANGMATCHES(LANG(?descriptionLit), "en"))
-    BIND(STR(?descriptionLit) AS ?description)
-  }
-  OPTIONAL {
-    ?wikidataId wdt:P18 ?imageUrl .
-    BIND(STR(?imageUrl) AS ?image)
-  }
-  OPTIONAL {
-    ?wikidataId wdt:P1566 ?geoNamesId .
-  }
+  OPTIONAL { ?wikidataId wdt:P18 ?image . }
+  OPTIONAL { ?wikidataId wdt:P1566 ?geoNamesId . }
 }`;
 
 function fetchFromWikidata(payload) {
@@ -83,36 +96,33 @@ function constructFromJson(json) {
 
   return json["@graph"].map((entity) => {
     const obj = { };
-    const get = (i) => Array.isArray(i) ? i[0] : i;
+    const get = (a) => Array.isArray(a) ? a[0] : a;
 
     if (entity.keywords) {
 
-      entity.keywords = Array.isArray(entity.keywords)
-        ?   entity.keywords
-        : [ entity.keywords ];
+      let keywords = Array.isArray(entity.keywords.en)
+        ?   entity.keywords.en
+        : [ entity.keywords.en ];
 
-      entity.keywords = entity.keywords.map((keyword) => {
+      keywords = keywords.map((keyword) => {
         keyword = keyword.toLowerCase().replace(' ', '_');
         return (isValidKeyword(keyword)) ? keyword : undefined;
       })
       .filter((keyword) => keyword !== undefined);
 
-      entity.keywords = [ ...new Set(entity.keywords) ];
+      obj.keywords = [ ...new Set(keywords) ];
     }
 
-    entity.wikidata = entity.wikidata.substring(3);
+    // en-containers
+    obj.name = get(entity.name?.en);
+    obj.description = get(entity.description?.en);
 
-    // keywords
-    obj.keywords = entity.keywords;
-
-    // tags
-    obj.name = get(entity.name);
-    obj.description = get(entity.description);
+    // lists
     obj.image = get(entity.image);
-
-    // linked
-    obj.wikidata = entity.wikidata;
     obj.geonames = get(entity.geonames);
+
+    // existing
+    obj.wikidata = entity.wikidata.substring(3);
 
     return obj;
   });
@@ -120,20 +130,12 @@ function constructFromJson(json) {
 
 async function wikidata() {
 
+  const resource = "Wikidata";
   const client = new MongoClient(MONGO_CONNECTION_STRING);
 
   try {
-    const tar = "linked.wikidata";
-
-    let payload = await client
-      .db(MONGO_DATABASE)
-      .collection(MONGO_GRAIN_COLLECTION)
-      .find({ [tar]: { $exists: true } })
-      .project({ [tar]: 1 })
-      .toArray()
-
-    console.log(`Constructed payload with ${payload.length} items.`);
-    payload = payload.map((item) => "wd:" + item.linked.wikidata);
+    let payload = await getPayload(client);
+    reportPayload(payload, resource);
 
     while (payload.length) {
 
@@ -142,12 +144,10 @@ async function wikidata() {
       const lst = await fetchFromWikidata(payload.slice(0, window).join(' '))
         .then((jsn) => constructFromJson(jsn));
 
-      console.log(` > Fetched ${lst.length} items from Wikidata.`)
+      reportFetchedItems(lst, resource);
 
-      for (const obj of lst) {
-
-        const filter = { "linked.wikidata": { $eq: obj.wikidata } };
-        const update = {
+      const upd = (obj) => {
+        return {
           $set: {
             "tags.name": obj.name,
             "tags.description": obj.description,
@@ -157,18 +157,14 @@ async function wikidata() {
           $addToSet: {
             "keywords": { $each: obj.keywords }
           }
-        };
+        }
+      };
 
-        await client
-          .db(MONGO_DATABASE)
-          .collection(MONGO_GRAIN_COLLECTION)
-          .updateMany(filter, update, { ignoreUndefined: true });
-      }
-
+      await writeToDatabase(client, lst, upd);
       payload = payload.slice(window);
     }
 
-    console.log(`Finished processing Wikidata items.`);
+    reportFinished(resource);
   }
   catch (err) { console.log(err); }
   finally { await client.close(); }

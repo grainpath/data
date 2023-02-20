@@ -1,8 +1,8 @@
 import fs from "fs";
 import {
   ASSETS_BASE_ADDR,
-  isValidKeyword,
-} from "./const.js";
+  isValidKeyword
+} from "./const.cjs";
 
 /**
  * Extracted value should occur at least `COUNT_LIMIT` times.
