@@ -94,7 +94,11 @@ function fetchFromWikidata(payload) {
 
 function constructFromJson(json) {
 
-  return json["@graph"].map((entity) => {
+  const g = json["@graph"];
+
+  if (g === undefined) { return []; }
+
+  return g.map((entity) => {
     const obj = { };
     const get = (a) => Array.isArray(a) ? a[0] : a;
 
@@ -111,7 +115,7 @@ function constructFromJson(json) {
       .filter((keyword) => keyword !== undefined);
 
       obj.keywords = [ ...new Set(keywords) ];
-    }
+    };
 
     // en-containers
     obj.name = get(entity.name?.en);

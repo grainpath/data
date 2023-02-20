@@ -16,8 +16,8 @@ const {
 
 const DBPEDIA_JSONLD_CONTEXT = {
   "my": "http://example.com/",
-  "wd": "http://www.wikidata.org/entity/",
   "db": "http://dbpedia.org/resource/",
+  "wd": "http://www.wikidata.org/entity/",
   "ya": "http://yago-knowledge.org/resource/",
   "name": {
     "@id": "my:name",
@@ -109,8 +109,12 @@ function fetchFromDbpedia(payload) {
 }
 
 function constructFromJson(json) {
-  
-  return json["@graph"].map((entity) => {
+
+  const g = json["@graph"];
+
+  if (g === undefined) { return []; }
+
+  return g.map((entity) => {
     const obj = { };
     const get = (a) => Array.isArray(a) ? a[0] : a;
 
