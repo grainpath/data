@@ -48,6 +48,8 @@ namespace osm
 
             var bulk = new List<WriteModel<OsmGrain>>();
 
+            // upsert strategy is beneficial if bboxes overlap ~> ensure indices!
+
             foreach (var g in _grains) {
 
                 var upsert = new ReplaceOneModel<OsmGrain>(
@@ -56,7 +58,7 @@ namespace osm
 
                 bulk.Add(upsert);
             }
-            coll.BulkWrite(bulk);
+            _ = coll.BulkWrite(bulk);
 
             _grains.Clear();
         }
