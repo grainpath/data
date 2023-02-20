@@ -6,7 +6,7 @@ namespace osm
     {
         private static double SignedArea(List<Point> polygon)
         {
-            var ar = 0.0f;
+            double ar = 0.0;
 
             for (int i = 0; i < polygon.Count - 1; ++i) {
                 var p0 = polygon[i];
@@ -25,7 +25,7 @@ namespace osm
 
         public static Point Centroid(List<Point> polygon)
         {
-            float ar = 0.0f, cx = 0.0f, cy = 0.0f;
+            double ar = 0.0, cx = 0.0, cy = 0.0;
 
             for (int i = 0; i < polygon.Count - 1; ++i) {
                 var p0 = polygon[i];
@@ -41,7 +41,7 @@ namespace osm
                 cy += (y0 + y1) * im;
             }
 
-            return new() { lon = cx / (3.0f * ar), lat = cy / (3.0f * ar) };
+            return new() { lon = cx / (3.0 * ar), lat = cy / (3.0 * ar) };
         }
     }
 }

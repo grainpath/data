@@ -5,18 +5,18 @@ namespace osm
 {
     internal sealed class Point
     {
-        public float lon { get; set; }
+        public double lon { get; set; }
 
-        public float lat { get; set; }
+        public double lat { get; set; }
     }
 
     internal sealed class GeoJsonPoint
     {
-        public GeoJsonPoint(float lon, float lat) { coordinates = new() { lon, lat }; }
+        public GeoJsonPoint(double lon, double lat) { coordinates = new() { lon, lat }; }
 
         public string type { get; set; } = "Point";
 
-        public List<float> coordinates { get; set; }
+        public List<double> coordinates { get; set; }
     }
 
     internal sealed class OsmGrainAddress

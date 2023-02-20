@@ -20,8 +20,8 @@ namespace osm
 
                 // extract and verify position
 
-                var lon = (float)node.Longitude.Value;
-                var lat = (float)node.Latitude.Value;
+                var lon = node.Longitude.Value;
+                var lat = node.Latitude.Value;
 
                 if (!CrsEpsg3857.IsWithin(lon, lat)) { Reporter.ReportOutbound(node); }
 

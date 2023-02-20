@@ -3,11 +3,11 @@
 /// </summary>
 internal static class CrsEpsg3857
 {
-    public static float BoundLon => 180.0f;
+    public static double BoundLon => 180.0;
 
-    public static float BoundLat => 85.06f;
+    public static double BoundLat => 85.06;
 
-    public static bool IsWithin(float lon, float lat)
+    public static bool IsWithin(double lon, double lat)
     {
         return lon >= -BoundLon && lon <= +BoundLon
             && lat >= -BoundLat && lat <= +BoundLat;

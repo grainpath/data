@@ -40,7 +40,7 @@ namespace osm
             catch (Exception) { throw new Exception($"Cannot create OSM stream from ${fStream}."); }
         }
 
-        private static (float, float, float, float) toBbox(List<string> bbox)
+        private static (double, double, double, double) toBbox(List<string> bbox)
         {
             if (bbox is null || bbox.Count == 0) {
                 return (-CrsEpsg3857.BoundLon, +CrsEpsg3857.BoundLat, +CrsEpsg3857.BoundLon, -CrsEpsg3857.BoundLat);
@@ -49,7 +49,7 @@ namespace osm
             var errMsg = "Bbox shall be in the format left;top;right;bottom within EPSG:3857.";
 
             if (bbox.Count != 4) { throw new Exception(errMsg); }
-            var coords = bbox.Select(t => float.Parse(t)).ToList();
+            var coords = bbox.Select(t => double.Parse(t)).ToList();
 
             return (Math.Min(coords[0], coords[2]),
                     Math.Max(coords[1], coords[3]),

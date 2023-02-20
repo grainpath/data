@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,18 +9,18 @@ namespace osm
 {
     internal class Source : IEnumerable<OsmGrain>
     {
-        float l, t, r, b;
+        double l, t, r, b;
         private readonly ILogger _logger;
         private readonly OsmStreamSource _stream;
 
-        public Source(ILogger logger, OsmStreamSource stream, (float, float, float, float) bbox)
+        public Source(ILogger logger, OsmStreamSource stream, (double, double, double, double) bbox)
         {
             _logger = logger; _stream = stream; (l, t, r, b) = bbox;
         }
 
         public IEnumerator<OsmGrain> GetEnumerator()
         {
-            var source = from item in _stream.FilterBox(l, t, r, b) where (item.Type != OsmGeoType.Relation) select item;
+            var source = from item in _stream.FilterBox((float)l, (float)t, (float)r, (float)b) where (item.Type != OsmGeoType.Relation) select item;
 
             long step = 0;
 
