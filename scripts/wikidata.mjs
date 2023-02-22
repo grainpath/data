@@ -73,7 +73,10 @@ WHERE {
     ?instanceOf rdfs:label ?keyword .
     FILTER(LANG(?keyword) = "en" && STRLEN(STR(?keyword)) > 0)
   }
-  OPTIONAL { ?wikidataId wdt:P18 ?image . }
+  OPTIONAL {
+    ?wikidataId wdt:P18 ?image .
+    FILTER(ISURI(?image))
+  }
   OPTIONAL { ?wikidataId wdt:P1566 ?geoNamesId . }
 }`;
 

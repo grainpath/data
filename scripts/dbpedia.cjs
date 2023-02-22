@@ -86,8 +86,14 @@ WHERE {
   	?dbPediaId owl:sameAs ?yagoId .
     FILTER(ISURI(?yagoId) && STRSTARTS(STR(?yagoId), "http://yago-knowledge.org/resource/"))
   }
-  OPTIONAL { ?dbPediaId dbo:thumbnail ?image . }
-  OPTIONAL { ?dbPediaId foaf:homepage ?website . }
+  OPTIONAL {
+    ?dbPediaId dbo:thumbnail ?image .
+    FILTER(ISURI(?image))
+  }
+  OPTIONAL {
+    ?dbPediaId foaf:homepage ?website .
+    FILTER(ISURI(?website))
+  }
 }`;
 
 function fetchFromDbpedia(payload) {
@@ -101,7 +107,7 @@ function fetchFromDbpedia(payload) {
     body: "query=" + encodeURIComponent(dbpediaQuery(payload))
   })
   .then((res) => res.text())
-  .then((txt) => rdfParser.parse(Streamify(txt), { contentType: DBPEDIA_ACCEPT_CONTENT, baseIRI: "http://example.org" }))
+  .then((txt) => rdfParser.parse(Streamify(txt), { contentType: DBPEDIA_ACCEPT_CONTENT }))
   .then((str) => rdfSerializer.serialize(str, { contentType: NQUADS_ACCEPT_CONTENT }))
   .then((str) => stringifyStream(str))
   .then((txt) => jsonld.fromRDF(txt, { format: NQUADS_ACCEPT_CONTENT }))
