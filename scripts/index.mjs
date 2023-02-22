@@ -6,14 +6,9 @@ import {
   MONGO_INDEX_COLLECTION
 } from "./const.cjs";
 
-/**
- * Extracts existing unique values for a given item.
- */
-
-const client = new MongoClient(MONGO_CONNECTION_STRING);
-
 async function construct() {
 
+  const client = new MongoClient(MONGO_CONNECTION_STRING);
   const grain = client.db(MONGO_DATABASE).collection(MONGO_GRAIN_COLLECTION);
   const index = client.db(MONGO_DATABASE).collection(MONGO_INDEX_COLLECTION);
 
