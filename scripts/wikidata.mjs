@@ -105,20 +105,19 @@ function constructFromJson(json) {
     const obj = { };
     const get = (a) => Array.isArray(a) ? a[0] : a;
 
-    if (entity.keywords) {
+    if (!entity.keywords) { entity.keywords = { "en": [] }; }
 
-      let keywords = Array.isArray(entity.keywords.en)
-        ?   entity.keywords.en
-        : [ entity.keywords.en ];
+    let keywords = Array.isArray(entity.keywords.en)
+      ?   entity.keywords.en
+      : [ entity.keywords.en ];
 
-      keywords = keywords.map((keyword) => {
-        keyword = keyword.toLowerCase().replace(' ', '_');
-        return (isValidKeyword(keyword)) ? keyword : undefined;
-      })
-      .filter((keyword) => keyword !== undefined);
+    keywords = keywords.map((keyword) => {
+      keyword = keyword.toLowerCase().replace(' ', '_');
+      return (isValidKeyword(keyword)) ? keyword : undefined;
+    })
+    .filter((keyword) => keyword !== undefined);
 
-      obj.keywords = [ ...new Set(keywords) ];
-    };
+    obj.keywords = [ ...new Set(keywords) ];
 
     // en-containers
     obj.name = get(entity.name?.en);
@@ -154,6 +153,9 @@ async function wikidata() {
       reportFetchedItems(lst, resource);
 
       const upd = (obj) => {
+
+
+
         return {
           $set: {
             "tags.name": obj.name,
