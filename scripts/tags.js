@@ -1,4 +1,5 @@
 import fs from "fs";
+import consola from "consola";
 import {
   ASSETS_BASE_ADDR,
   isValidKeyword
@@ -120,6 +121,8 @@ const FORBIDDEN_VALUES = new Set([
   "yesq",
 ]);
 
+const logger = consola.create();
+
 /**
  * Extracts possible values of the most popular tags with their frequencies.
  * 
@@ -127,50 +130,53 @@ const FORBIDDEN_VALUES = new Set([
  */
 async function extract(args) {
 
-  console.log(`Started processing OSM tags ${args.join(", ")}.`);
+  try {
+    logger.info(`Started processing OSM tags ${args.join(", ")}.`);
 
-  for (const key of args) {
+    for (const key of args) {
 
-    console.log(` > Processing key ${key}.`);
+      logger.info(`> Processing key ${key}.`);
 
-    const dict = new Map();
+      const dict = new Map();
 
-    await fetch(query({ key: key }))
-      .then(res => res.json())
-      .then(res => {
+      await fetch(query({ key: key }))
+        .then(res => res.json())
+        .then(res => {
 
-        res.data.forEach(item => {
+          res.data.forEach(item => {
 
-          // extract only valid values
-          item.value
-            .split(/[\s;,]+/)
-            .map(value => value.toLowerCase().replace("-", "_"))
-            .filter(value => isValidKeyword(value) && !FORBIDDEN_VALUES.has(value))
-            .forEach(value => {
-              if (!dict.has(value)) { dict.set(value, 0); }
-              dict.set(value, dict.get(value) + item.count);
-            });
-        });
-      })
-      .then(() => {
+            // extract only valid values
+            item.value
+              .split(/[\s;,]+/)
+              .map(value => value.toLowerCase().replace("-", "_"))
+              .filter(value => isValidKeyword(value) && !FORBIDDEN_VALUES.has(value))
+              .forEach(value => {
+                if (!dict.has(value)) { dict.set(value, 0); }
+                dict.set(value, dict.get(value) + item.count);
+              });
+          });
+        })
+        .then(() => {
 
-        const file = `${ASSETS_BASE_ADDR}/tags/${key}.json`;
+          const file = `${ASSETS_BASE_ADDR}/tags/${key}.json`;
 
-        // Map does not maintain lexicographic order!
-        let obj = [ ...dict.keys() ]
-          .map(key => { return { value: key, count: dict.get(key) }; })
-          .sort((l, r) => r.count - l.count)
-          .filter(pair => pair.count >= COUNT_LIMIT);
+          // Map does not maintain lexicographic order!
+          let obj = [ ...dict.keys() ]
+            .map(key => { return { value: key, count: dict.get(key) }; })
+            .sort((l, r) => r.count - l.count)
+            .filter(pair => pair.count >= COUNT_LIMIT);
 
-        // write to a file
-        fs.writeFileSync(file, JSON.stringify(obj, null, 2));
+          // write to a file
+          fs.writeFileSync(file, JSON.stringify(obj, null, 2));
 
-        console.log(` > Finished processing file ${file}, extracted ${obj.length} objects.`);
-      })
-      .catch(err => console.log(err));
+          logger.info(`> Finished processing file ${file}, extracted ${obj.length} objects.`);
+        })
+        .catch(err => console.log(err));
+    }
+
+    logger.info("Finished processing OSM tags.");
   }
-
-  console.log("Finished processing OSM tags.");
+  catch (ex) { logger.error(ex); }
 }
 
 extract(process.argv.slice(2));

@@ -1,3 +1,4 @@
+import consola from "consola";
 import { MongoClient } from "mongodb";
 import {
   MONGO_CONNECTION_STRING,
@@ -6,10 +7,12 @@ import {
   MONGO_INDEX_COLLECTION
 } from "./const.cjs";
 
+const logger = consola.create();
+
 async function init() {
-  
+
   const client = new MongoClient(MONGO_CONNECTION_STRING);
-  
+
   try {
     await client.db(MONGO_DATABASE).dropDatabase();
 
@@ -18,8 +21,11 @@ async function init() {
 
     await grain.createIndex({ "linked.osm": 1 });
     await grain.createIndex({ "linked.wikidata": 1 });
-    await grain.createIndex({ "location": "2dsphere" });
+    await grain.createIndex({ "position": "2dsphere" });
+
+    logger.info("Finished setting up database.")
   }
+  catch (ex) { logger.error(ex); }
   finally { await client.close(); }
 }
 

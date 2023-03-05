@@ -41,7 +41,8 @@ namespace osm
                     TagExtractor.Extract(node.Tags, grain);
                     LinkedExtractor.Extract(node, grain.linked);
 
-                    grain.location = new GeoJsonPoint(lon, lat);
+                    grain.location = new() { lon = lon, lat = lat };
+                    grain.position = new(lon, lat);
 
                     return grain;
                 }
@@ -92,10 +93,11 @@ namespace osm
                      * see https://www.rfc-editor.org/rfc/rfc7946#appendix-B.1! */
 
                     if (!Cartesian.IsCounterClockwise(seq)) { seq.Reverse(); }
-                    grain.polygon = seq;
+                    var cen = Cartesian.Centroid(seq);
 
-                    var centroid = Cartesian.Centroid(seq);
-                    grain.location = new(centroid.lon, centroid.lat);
+                    grain.location = new() { lon = cen.lon, lat = cen.lat };
+                    grain.position = new(cen.lon, cen.lat);
+                    grain.polygon = seq;
 
                     return grain;
                 }

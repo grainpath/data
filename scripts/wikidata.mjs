@@ -8,6 +8,7 @@ import {
 
 import {
   getPayload,
+  reportError,
   reportFetchedItems,
   reportFinished,
   reportPayload,
@@ -136,6 +137,7 @@ function constructFromJson(json) {
 
 async function wikidata() {
 
+  let cnt = 0;
   const resource = "Wikidata";
   const client = new MongoClient(MONGO_CONNECTION_STRING);
 
@@ -150,12 +152,10 @@ async function wikidata() {
       const lst = await fetchFromWikidata(payload.slice(0, window).join(' '))
         .then((jsn) => constructFromJson(jsn));
 
+      cnt += lst.length;
       reportFetchedItems(lst, resource);
 
       const upd = (obj) => {
-
-
-
         return {
           $set: {
             "tags.name": obj.name,
@@ -173,9 +173,9 @@ async function wikidata() {
       payload = payload.slice(window);
     }
 
-    reportFinished(resource);
+    reportFinished(resource, cnt);
   }
-  catch (err) { console.log(err); }
+  catch (ex) { reportError(ex); }
   finally { await client.close(); }
 }
 

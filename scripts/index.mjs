@@ -1,3 +1,4 @@
+import consola from "consola";
 import { MongoClient } from "mongodb";
 import {
   MONGO_CONNECTION_STRING,
@@ -5,6 +6,8 @@ import {
   MONGO_GRAIN_COLLECTION,
   MONGO_INDEX_COLLECTION
 } from "./const.cjs";
+
+const logger = consola.create();
 
 async function construct() {
 
@@ -23,7 +26,7 @@ async function construct() {
 
     for (let [ source, target ] of pairs) {
 
-      console.log(`Index @${target} is being constructed...`);
+      logger.info(`Index @${target} is being constructed...`);
 
       const result = new Map();
 
@@ -53,10 +56,10 @@ async function construct() {
       await index.updateOne({ _id: target }, { $set: { values: obj } }, { upsert: true });
 
       console.log();
-      console.log(`Finished index @${target}, total ${obj.length} items extracted.`);
+      logger.info(`Finished index @${target}, total ${obj.length} items extracted.`);
     }
   }
-  catch (err) { console.log(err); }
+  catch (ex) { logger.error(ex); }
   finally { await client.close(); }
 }
 

@@ -11,7 +11,8 @@ const {
   writeToDatabase,
   reportPayload,
   reportFetchedItems,
-  reportFinished
+  reportFinished,
+  reportError
 } = require("./share.cjs");
 
 const DBPEDIA_JSONLD_CONTEXT = {
@@ -145,6 +146,7 @@ function constructFromJson(json) {
 
 async function dbpedia() {
 
+  let cnt = 0;
   const resource = "DbPedia";
   const client = new MongoClient(MONGO_CONNECTION_STRING);
 
@@ -159,6 +161,7 @@ async function dbpedia() {
       const lst = await fetchFromDbpedia(payload.slice(0, window).join(' '))
         .then((jsn) => constructFromJson(jsn));
 
+      cnt += lst.length;
       reportFetchedItems(lst, resource);
 
       const upd = (obj) => {
@@ -178,9 +181,9 @@ async function dbpedia() {
       payload = payload.slice(window);
     }
 
-    reportFinished(resource);
+    reportFinished(resource, cnt);
   }
-  catch (err) { console.log(err); }
+  catch (ex) { reportError(ex); }
   finally { await client.close(); }
 }
 

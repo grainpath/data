@@ -160,10 +160,12 @@ namespace osm
 
     internal sealed class OsmGrain
     {
+        public Point location { get; set; }
+
+        public GeoJsonPoint position { get; set; }
+
         [BsonIgnoreIfNull]
         public List<Point> polygon { get; set; }
-
-        public GeoJsonPoint location { get; set; }
 
         public OsmGrainTags tags { get; set; } = new();
 

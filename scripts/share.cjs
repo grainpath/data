@@ -1,10 +1,11 @@
+const consola = require("consola");
+
 const {
   MONGO_DATABASE,
   MONGO_GRAIN_COLLECTION,
 } = require("./const.cjs");
 
 async function getPayload(client) {
-
   const tar = "linked.wikidata";
 
   const payload = await client
@@ -18,7 +19,6 @@ async function getPayload(client) {
 }
 
 async function writeToDatabase(client, lst, upd) {
-
   for (const obj of lst) {
 
     const filter = { "linked.wikidata": { $eq: obj.wikidata } };
@@ -30,22 +30,25 @@ async function writeToDatabase(client, lst, upd) {
   }
 }
 
+function reportError(ex) { consola.error(ex); }
+
 function reportPayload(payload, resource) {
-  console.log(`Constructed ${resource} payload with ${payload.length} items.`);
+  consola.info(`Constructed ${resource} payload with ${payload.length} items.`);
 }
 
 function reportFetchedItems(lst, resource) {
-  console.log(` > Fetched ${lst.length} items from ${resource}.`);
+  consola.info(`> Fetched ${lst.length} items from ${resource}.`);
 }
 
-function reportFinished(resource) {
-  console.log(`Finished processing ${resource} items.`);
+function reportFinished(resource, cnt) {
+  consola.info(`Finished processing ${resource}, fetched ${cnt} items.`);
 }
 
 module.exports = {
   getPayload: getPayload,
-  writeToDatabase: writeToDatabase,
+  reportError: reportError,
   reportPayload: reportPayload,
   reportFetchedItems: reportFetchedItems,
-  reportFinished: reportFinished
+  reportFinished: reportFinished,
+  writeToDatabase: writeToDatabase
 };
