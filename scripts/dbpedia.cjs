@@ -167,7 +167,7 @@ async function dbpedia() {
       const upd = (obj) => {
         return {
           $set: {
-            "tags.name": obj.name,
+            "name": obj.name,
             "tags.description": obj.description,
             "tags.image": obj.image,
             "tags.website": obj.website,

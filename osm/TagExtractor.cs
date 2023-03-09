@@ -42,7 +42,7 @@ namespace osm
         static List<string> Divide(string s)
             => s.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
 
-        static bool IsNonTrivialString(string s) => s is not null && s != string.Empty;
+        public static bool IsNonTrivialString(string s) => s is not null && s != string.Empty;
 
         static bool IsNonTrivialStringSequence(List<string> seq)
         {
@@ -160,18 +160,6 @@ namespace osm
         }
 
         // extractors for a specific tag
-
-        static void Name(TagsCollectionBase otags, OsmGrainTags gtags)
-        {
-            var ks = new string[] { "name:en", "name", "alt_name", "brand", "operator" };
-
-            foreach (var k in ks) {
-                if (otags.TryGetValue(k, out var v) && IsNonTrivialString(v)) {
-                    gtags.name = v;
-                    return;
-                }
-            }
-        }
 
         static void Image(TagsCollectionBase otags, OsmGrainTags gtags)
         {
@@ -461,7 +449,7 @@ namespace osm
 
         public static void Extract(TagsCollectionBase tags, OsmGrain grain)
         {
-            Name(tags, grain.tags);
+            //Polygon(tags, grain.tags);
             Image(tags, grain.tags);
             Website(tags, grain.tags);
             Address(tags, grain.tags);

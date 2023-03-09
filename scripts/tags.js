@@ -1,5 +1,6 @@
 import fs from "fs";
 import consola from "consola";
+import fetch from "node-fetch";
 import {
   ASSETS_BASE_ADDR,
   isValidKeyword
@@ -121,14 +122,14 @@ const FORBIDDEN_VALUES = new Set([
   "yesq",
 ]);
 
-const logger = consola.create();
-
 /**
  * Extracts possible values of the most popular tags with their frequencies.
  * 
  * See https://taginfo.openstreetmap.org/taginfo/apidoc#api_4_key_values.
  */
 async function extract(args) {
+
+  const logger = consola.create();
 
   try {
     logger.info(`Started processing OSM tags ${args.join(", ")}.`);
@@ -148,7 +149,7 @@ async function extract(args) {
             // extract only valid values
             item.value
               .split(/[\s;,]+/)
-              .map(value => value.toLowerCase().replace("-", "_"))
+              .map(value => value.toLowerCase())
               .filter(value => isValidKeyword(value) && !FORBIDDEN_VALUES.has(value))
               .forEach(value => {
                 if (!dict.has(value)) { dict.set(value, 0); }

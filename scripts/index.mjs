@@ -7,9 +7,9 @@ import {
   MONGO_INDEX_COLLECTION
 } from "./const.cjs";
 
-const logger = consola.create();
+async function index() {
 
-async function construct() {
+  const logger = consola.create();
 
   const client = new MongoClient(MONGO_CONNECTION_STRING);
   const grain = client.db(MONGO_DATABASE).collection(MONGO_GRAIN_COLLECTION);
@@ -63,4 +63,4 @@ async function construct() {
   finally { await client.close(); }
 }
 
-construct();
+index();

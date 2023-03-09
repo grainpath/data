@@ -39,6 +39,7 @@ namespace osm
                 if (grain.keywords.Count > 0) {
 
                     TagExtractor.Extract(node.Tags, grain);
+                    NameExtractor.Extract(node.Tags, grain);
                     LinkedExtractor.Extract(node, grain.linked);
 
                     grain.location = new() { lon = lon, lat = lat };
@@ -84,6 +85,7 @@ namespace osm
                 if (grain.keywords.Count > 0) {
 
                     TagExtractor.Extract(way.Tags, grain);
+                    NameExtractor.Extract(way.Tags, grain);
                     LinkedExtractor.Extract(way, grain.linked);
 
                     /* Note that both IsCounterClockwise and Centroid
@@ -95,9 +97,9 @@ namespace osm
                     if (!Cartesian.IsCounterClockwise(seq)) { seq.Reverse(); }
                     var cen = Cartesian.Centroid(seq);
 
+                    grain.tags.polygon = seq;
                     grain.location = new() { lon = cen.lon, lat = cen.lat };
                     grain.position = new(cen.lon, cen.lat);
-                    grain.polygon = seq;
 
                     return grain;
                 }
