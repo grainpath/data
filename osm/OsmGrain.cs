@@ -19,53 +19,55 @@ namespace osm
         public List<double> coordinates { get; set; }
     }
 
-    internal sealed class OsmGrainAddress
-    {
-        [BsonIgnoreIfNull]
-        public string country { get; set; }
-
-        [BsonIgnoreIfNull]
-        public string settlement { get; set; }
-
-        [BsonIgnoreIfNull]
-        public string district { get; set; }
-
-        [BsonIgnoreIfNull]
-        public string place { get; set; }
-
-        [BsonIgnoreIfNull]
-        public string house { get; set; }
-
-        [BsonIgnoreIfNull]
-        public string postal_code { get; set; }
-    }
-
-    internal sealed class OsmGrainPayment
-    {
-        [BsonIgnoreIfNull]
-        public bool? cash { get; set; }
-
-        [BsonIgnoreIfNull]
-        public bool? card { get; set; }
-
-        [BsonIgnoreIfNull]
-        public bool? amex { get; set; }
-
-        [BsonIgnoreIfNull]
-        public bool? jcb { get; set; }
-
-        [BsonIgnoreIfNull]
-        public bool? mastercard { get; set; }
-
-        [BsonIgnoreIfNull]
-        public bool? visa { get; set; }
-
-        [BsonIgnoreIfNull]
-        public bool? crypto { get; set; }
-    }
-
     internal sealed class OsmGrainTags
     {
+        // types
+
+        internal sealed class Address
+        {
+            [BsonIgnoreIfNull]
+            public string country { get; set; }
+
+            [BsonIgnoreIfNull]
+            public string settlement { get; set; }
+
+            [BsonIgnoreIfNull]
+            public string district { get; set; }
+
+            [BsonIgnoreIfNull]
+            public string place { get; set; }
+
+            [BsonIgnoreIfNull]
+            public string house { get; set; }
+
+            [BsonIgnoreIfNull]
+            public string postal_code { get; set; }
+        }
+
+        internal sealed class Payment
+        {
+            [BsonIgnoreIfNull]
+            public bool? cash { get; set; }
+
+            [BsonIgnoreIfNull]
+            public bool? card { get; set; }
+
+            [BsonIgnoreIfNull]
+            public bool? amex { get; set; }
+
+            [BsonIgnoreIfNull]
+            public bool? jcb { get; set; }
+
+            [BsonIgnoreIfNull]
+            public bool? mastercard { get; set; }
+
+            [BsonIgnoreIfNull]
+            public bool? visa { get; set; }
+
+            [BsonIgnoreIfNull]
+            public bool? crypto { get; set; }
+        }
+
         // geometry
 
         [BsonIgnoreIfNull]
@@ -80,10 +82,10 @@ namespace osm
         public string website { get; set; }
 
         [BsonIgnoreIfNull]
-        public OsmGrainAddress address { get; set; }
+        public Address address { get; set; }
 
         [BsonIgnoreIfNull]
-        public OsmGrainPayment payment { get; set; }
+        public Payment payment { get; set; }
 
         // contact
 
