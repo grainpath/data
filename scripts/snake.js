@@ -17,13 +17,17 @@ async function snake() {
   logger.info("Started document processing.");
 
   try {
-    let gc = collection.find().project({ keywords: 1 });
+    const gc = collection.find().project({ keywords: 1, tags: { rental: 1, clothes: 1, cuisine: 1 } });
+    const func = (arr) => arr ? arr.map(item => item.replace('_', ' ')) : undefined;
 
     while (await gc.hasNext()) {
-      let grain = await gc.next();
+      const g = await gc.next();
+      const t = g.tags;
+
       await collection.updateOne(
-        { _id: grain._id },
-        { $set: { keywords: grain.keywords.map((keyword) => keyword.replace("_", " ")) }}
+        { _id: g._id },
+        { $set: { keywords: func(g.keywords), tags: { rental: func(t.rental), clothes: func(t.clothes), cuisine: func(t.cuisine) } } },
+        { ignoreUndefined: true }
       );
       if (++cnt >= 1000) { tot += cnt; cnt = 0; logger.info(`Still working... ${tot} documents already processed.`); }
     }

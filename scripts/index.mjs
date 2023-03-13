@@ -38,6 +38,8 @@ async function index() {
       while (await gc.hasNext()) {
 
         let res = await gc.next();
+
+        // recursive array extraction ~> res[tags[rental]
         let arr = source.split('.').reduce((a, b) => a[b], res);
 
         arr.forEach((word) => {
