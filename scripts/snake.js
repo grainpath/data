@@ -25,9 +25,20 @@ async function snake() {
       const t = g.tags;
 
       await collection.updateOne(
-        { _id: g._id },
-        { $set: { keywords: func(g.keywords), tags: { rental: func(t.rental), clothes: func(t.clothes), cuisine: func(t.cuisine) } } },
-        { ignoreUndefined: true }
+        {
+          _id: g._id
+        },
+        {
+          $set: {
+            keywords: func(g.keywords),
+            "tags.rental": func(t.rental),
+            "tags.clothes": func(t.clothes),
+            "tags.cuisine": func(t.cuisine)
+          }
+        },
+        {
+          ignoreUndefined: true
+        }
       );
       if (++cnt >= 1000) { tot += cnt; cnt = 0; logger.info(`Still working... ${tot} documents already processed.`); }
     }

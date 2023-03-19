@@ -40,6 +40,7 @@ const FORBIDDEN_VALUES = new Set([
   "detached",
   "detached_house",
   "disused",
+  "empty",
   "exit",
   "fixme",
   "fuel",

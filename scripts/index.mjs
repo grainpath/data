@@ -7,59 +7,116 @@ import {
   MONGO_INDEX_COLLECTION
 } from "./const.cjs";
 
+/**
+ * The goal of this script is to create `index` supporting user interaction
+ * with the system, in particular to cover autocomplete functionality. Two
+ * variants of indices are required.
+ * 
+ * - collects, e.g. "cuisine":
+ *    [
+ *      {
+ *        value: "italian",
+ *        count: 521
+ *      },
+ *      ...
+ *    ]
+ * - keywords, e.g. "keywords":
+ *    [
+ *      {
+ *        value: "tourism",
+ *        count: 153,
+ *        tags: [ "name", "website", "polygon", ... ]
+ *      },
+ *      ...
+ *    ]
+ */
+
+/**
+ * Extract keywords with tags.
+ * @param {*} doc as stored in the database.
+ * @param {*} keywords Map&lt;string, { label: string, count: number, tags: Set }&gt;
+ */
+function extractKeywords(doc, keywords) {
+
+  const base = (word) => { return { label: word, count: 0, tags: new Set() }; };
+
+  doc.keywords.forEach(word => {
+    if (!keywords.has(word)) { keywords.set(word, base(word)); }
+    const item = keywords.get(word);
+
+    ++item.count;
+    Object.keys(doc.tags).forEach(key => item.tags.add(key));
+  });
+}
+
+/**
+ * 
+ * @param {*} doc 
+ * @param {*} collect 
+ * @param {*} func 
+ */
+function extractCollects(doc, collect, func) {
+
+  const base = (word) => { return { label: word, count: 0 }; };
+
+  func(doc)?.forEach(word => {
+    if (!collect.has(word)) { collect.set(word, base(word)); }
+    ++collect.get(word).count;
+  });
+}
+
 async function index() {
 
   const logger = consola.create();
 
   const client = new MongoClient(MONGO_CONNECTION_STRING);
-  const grain = client.db(MONGO_DATABASE).collection(MONGO_GRAIN_COLLECTION);
-  const index = client.db(MONGO_DATABASE).collection(MONGO_INDEX_COLLECTION);
-
-  const pairs = [
-    [ "keywords", "keywords" ],
-    [ "tags.clothes", "clothes" ],
-    [ "tags.cuisine", "cuisine" ],
-    [ "tags.rental", "rental" ]
-  ];
+  const database = client.db(MONGO_DATABASE);
 
   try {
+    await database.dropCollection(MONGO_INDEX_COLLECTION, {  });
+  } catch (ex) { logger.error(ex.message); }
 
-    for (let [ source, target ] of pairs) {
+  const grain = database.collection(MONGO_GRAIN_COLLECTION);
+  const index = database.collection(MONGO_INDEX_COLLECTION);
 
-      logger.info(`Index @${target} is being constructed...`);
+  let cnt = 0, tot = 0;
 
-      const result = new Map();
+  try {
+    const [ keywords, clothes, cuisine, rental ] = [ new Map(), new Map(), new Map(), new Map() ];
+    let gc = grain.find();
 
-      let tstamp = Date.now();
-      process.stdout.write(" > ");
+    while (await gc.hasNext()) {
 
-      let gc = grain.find({ [source]: { $exists: true } }).project({ [source]: 1 });
-  
-      while (await gc.hasNext()) {
+      let doc = await gc.next();
 
-        let res = await gc.next();
+      extractKeywords(doc, keywords);
+      extractCollects(doc, rental,  (doc) => doc.tags.rental );
+      extractCollects(doc, clothes, (doc) => doc.tags.clothes);
+      extractCollects(doc, cuisine, (doc) => doc.tags.cuisine);
 
-        // recursive array extraction ~> res[tags[rental]
-        let arr = source.split('.').reduce((a, b) => a[b], res);
-
-        arr.forEach((word) => {
-
-          if (!result.has(word)) { result.set(word, 0); }
-          result.set(word, result.get(word) + 1);
-          if (Date.now() - tstamp >= 1000) { tstamp = Date.now(); process.stdout.write('.'); }
-        });
-      }
-
-      await gc.close();
-
-      const obj = [ ...result.keys() ]
-        .map((key) => { return { value: key, count: result.get(key) }; })
-
-      await index.updateOne({ _id: target }, { $set: { values: obj } }, { upsert: true });
-
-      console.log();
-      logger.info(`Finished index @${target}, total ${obj.length} items extracted.`);
+      if (++cnt >= 1000) { tot += cnt; cnt = 0; logger.info(`Still working... Processed ${tot} documents.`); }
     }
+
+    logger.info(`Processed ${tot + cnt} documents, constructing index...`);
+
+    await gc.close();
+
+    // insert keywords
+
+    await index.insertOne({ _id: "keywords", values: [ ...keywords.keys() ].map(key => {
+      const item = keywords.get(key);
+      return { ...item, tags: [ ...item.tags ] }; // tags as an array!
+    })});
+
+    // insert clothes, cuisine, and rental
+
+    const map2arr = (m) => [ ...m.keys() ].map(key => m.get(key));
+
+    for (const [ w, m ] of [ [ "clothes", clothes ], [ "cuisine", cuisine ], [ "rental", rental ] ]) {
+      await index.insertOne({ _id: w, values: map2arr(m) });
+    }
+
+    logger.info(`Index has been constructed. Exiting...`);
   }
   catch (ex) { logger.error(ex); }
   finally { await client.close(); }
