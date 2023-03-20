@@ -65,6 +65,15 @@ function extractCollects(doc, collect, func) {
   });
 }
 
+function extractNumerics(doc, numeric, func) {
+  const val = func(doc);
+
+  if (val) {
+    numeric.min = Math.min(numeric.min, val);
+    numeric.max = Math.max(numeric.max, val);
+  }
+}
+
 async function index() {
 
   const logger = consola.create();
@@ -81,8 +90,12 @@ async function index() {
 
   let cnt = 0, tot = 0;
 
+  const arr = (n) => Array.apply(null, Array(n));
+
   try {
-    const [ keywords, clothes, cuisine, rental ] = [ new Map(), new Map(), new Map(), new Map() ];
+    const [ keywords, clothes, cuisine, rental ] = arr(4).map(() => new Map());
+    const [ rank, min_age, capacity ] = arr(3).map(() => { return { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER }; });
+
     let gc = grain.find();
 
     while (await gc.hasNext()) {
@@ -90,9 +103,14 @@ async function index() {
       let doc = await gc.next();
 
       extractKeywords(doc, keywords);
-      extractCollects(doc, rental,  (doc) => doc.tags.rental );
+
+      extractCollects(doc, rental, (doc) => doc.tags.rental);
       extractCollects(doc, clothes, (doc) => doc.tags.clothes);
       extractCollects(doc, cuisine, (doc) => doc.tags.cuisine);
+
+      extractNumerics(doc, rank, (doc) => doc.tags.rank);
+      extractNumerics(doc, min_age, (doc) => doc.tags.min_age);
+      extractNumerics(doc, capacity, (doc) => doc.tags.capacity);
 
       if (++cnt >= 1000) { tot += cnt; cnt = 0; logger.info(`Still working... Processed ${tot} documents.`); }
     }
@@ -103,18 +121,26 @@ async function index() {
 
     // insert keywords
 
-    await index.insertOne({ _id: "keywords", values: [ ...keywords.keys() ].map(key => {
+    await index.insertOne({ _id: "keywords", keywords: [ ...keywords.keys() ].map(key => {
       const item = keywords.get(key);
       return { ...item, tags: [ ...item.tags ] }; // tags as an array!
     })});
 
-    // insert clothes, cuisine, and rental
+    // insert limits
 
     const map2arr = (m) => [ ...m.keys() ].map(key => m.get(key));
 
-    for (const [ w, m ] of [ [ "clothes", clothes ], [ "cuisine", cuisine ], [ "rental", rental ] ]) {
-      await index.insertOne({ _id: w, values: map2arr(m) });
-    }
+    await index.insertOne({
+      _id: "limits",
+      limits: {
+        rental: map2arr(rental),
+        clothes: map2arr(clothes),
+        cuisine: map2arr(cuisine),
+        rank: rank,
+        min_age: min_age,
+        capacity: capacity
+      }
+    });
 
     logger.info(`Index has been constructed. Exiting...`);
   }
