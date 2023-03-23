@@ -19,10 +19,8 @@ namespace osm
         public List<double> coordinates { get; set; }
     }
 
-    internal sealed class OsmGrainTags
+    internal sealed class OsmGrainFeatures
     {
-        // types
-
         internal sealed class Address
         {
             [BsonIgnoreIfNull]
@@ -68,12 +66,11 @@ namespace osm
             public bool? crypto { get; set; }
         }
 
-        // geometry
-
         [BsonIgnoreIfNull]
         public List<Point> polygon { get; set; }
 
-        // info
+        [BsonIgnoreIfNull]
+        public string name { get; set; }
 
         [BsonIgnoreIfNull]
         public string image { get; set; }
@@ -87,15 +84,20 @@ namespace osm
         [BsonIgnoreIfNull]
         public Payment payment { get; set; }
 
-        // contact
-
         [BsonIgnoreIfNull]
         public string email { get; set; }
 
         [BsonIgnoreIfNull]
         public string phone { get; set; }
 
-        // boolean
+        [BsonIgnoreIfNull]
+        public List<string> charge { get; set; }
+
+        [BsonIgnoreIfNull]
+        public List<string> opening_hours { get; set; }
+
+        [BsonIgnoreIfNull]
+        public bool? fee { get; set; }
 
         [BsonIgnoreIfNull]
         public bool? delivery { get; set; }
@@ -121,27 +123,14 @@ namespace osm
         [BsonIgnoreIfNull]
         public bool? wheelchair { get; set; }
 
-        // measurable
-
         [BsonIgnoreIfNull]
         public long? capacity { get; set; }
 
         [BsonIgnoreIfNull]
-        public long? min_age { get; set; }
+        public long? minimum_age { get; set; }
 
         [BsonIgnoreIfNull]
         public long? rank { get; set; }
-
-        // specific
-
-        [BsonIgnoreIfNull]
-        public bool? fee { get; set; }
-
-        [BsonIgnoreIfNull]
-        public List<string> charge { get; set; }
-
-        [BsonIgnoreIfNull]
-        public List<string> opening_hours { get; set; }
 
         [BsonIgnoreIfNull]
         public SortedSet<string> clothes { get; set; }
@@ -170,10 +159,11 @@ namespace osm
 
         public GeoJsonPoint position { get; set; }
 
-        public OsmGrainTags tags { get; set; } = new();
+        public SortedSet<string> keywords { get; set; } = new();
 
         public OsmGrainLinked linked { get; set; } = new();
 
-        public SortedSet<string> keywords { get; set; } = new();
+        public OsmGrainFeatures features { get; set; } = new();
+
     }
 }

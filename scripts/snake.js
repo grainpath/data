@@ -17,12 +17,12 @@ async function snake() {
   logger.info("Started document processing.");
 
   try {
-    const gc = collection.find().project({ keywords: 1, tags: { rental: 1, clothes: 1, cuisine: 1 } });
+    const gc = collection.find().project({ keywords: 1, features: { rental: 1, clothes: 1, cuisine: 1 } });
     const func = (arr) => arr ? arr.map(item => item.replace('_', ' ')) : undefined;
 
     while (await gc.hasNext()) {
       const g = await gc.next();
-      const t = g.tags;
+      const f = g.features;
 
       await collection.updateOne(
         {
@@ -30,10 +30,10 @@ async function snake() {
         },
         {
           $set: {
-            keywords: func(g.keywords),
-            "tags.rental": func(t.rental),
-            "tags.clothes": func(t.clothes),
-            "tags.cuisine": func(t.cuisine)
+            "keywords": func(g.keywords),
+            "features.clothes": func(f.clothes),
+            "features.cuisine": func(f.cuisine),
+            "features.rental": func(f.rental)
           }
         },
         {

@@ -159,8 +159,9 @@ async function wikidata() {
         return {
           $set: {
             "name": obj.name,
-            "tags.description": obj.description,
-            "tags.image": obj.image,
+            "features.name": obj.name,
+            "features.description": obj.description,
+            "features.image": obj.image,
             "linked.geonames": obj.geonames
           },
           $addToSet: {

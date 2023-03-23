@@ -8,52 +8,29 @@ import {
 } from "./const.cjs";
 
 /**
- * The goal of this script is to create `index` supporting user interaction
- * with the system, in particular to cover autocomplete functionality. Two
- * variants of indices are required.
- * 
- * - collects, e.g. "cuisine":
- *    [
- *      {
- *        value: "italian",
- *        count: 521
- *      },
- *      ...
- *    ]
- * - keywords, e.g. "keywords":
- *    [
- *      {
- *        value: "tourism",
- *        count: 153,
- *        tags: [ "name", "website", "polygon", ... ]
- *      },
- *      ...
- *    ]
- */
-
-/**
- * Extract keywords with tags.
- * @param {*} doc as stored in the database.
- * @param {*} keywords Map&lt;string, { label: string, count: number, tags: Set }&gt;
+ * Extract keywords with features.
+ * @param {*} doc document that is currently considered.
+ * @param {*} keywords 
  */
 function extractKeywords(doc, keywords) {
 
-  const base = (word) => { return { label: word, count: 0, tags: new Set() }; };
+  const base = (word) => { return { label: word, count: 0, features: new Set() }; };
 
   doc.keywords.forEach(word => {
     if (!keywords.has(word)) { keywords.set(word, base(word)); }
     const item = keywords.get(word);
 
     ++item.count;
-    Object.keys(doc.tags).forEach(key => item.tags.add(key));
+    Object.keys(doc.features).forEach(key => item.features.add(key));
   });
 }
 
 /**
- * 
- * @param {*} doc 
- * @param {*} collect 
- * @param {*} func 
+ * Extract values that can appear in `cuisine`, `clothes`, or `rental`
+ * collections.
+ * @param {*} doc document that is currently considered.
+ * @param {*} collect objects storing values.
+ * @param {*} func appender for a possible new value.
  */
 function extractCollects(doc, collect, func) {
 
@@ -65,6 +42,13 @@ function extractCollects(doc, collect, func) {
   });
 }
 
+/**
+ * Extract limits of the numeric features, such as `capacity`, `minimum_age`,
+ * and `rank`.
+ * @param {*} doc document that is currently considered.
+ * @param {*} numeric objects storing limits.
+ * @param {*} func setter for a possible new value.
+ */
 function extractNumerics(doc, numeric, func) {
   const val = func(doc);
 
@@ -74,6 +58,10 @@ function extractNumerics(doc, numeric, func) {
   }
 }
 
+/**
+ * Main function performing index construction to improve user interaction
+ * with the system. In particular, to ensure responsive autocomplete.
+ */
 async function index() {
 
   const logger = consola.create();
@@ -94,7 +82,9 @@ async function index() {
 
   try {
     const [ keywords, clothes, cuisine, rental ] = arr(4).map(() => new Map());
-    const [ rank, min_age, capacity ] = arr(3).map(() => { return { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER }; });
+    const [ rank, capacity, minimum_age ] = arr(3).map(() => {
+      return { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER };
+    });
 
     let gc = grain.find();
 
@@ -104,13 +94,13 @@ async function index() {
 
       extractKeywords(doc, keywords);
 
-      extractCollects(doc, rental, (doc) => doc.tags.rental);
-      extractCollects(doc, clothes, (doc) => doc.tags.clothes);
-      extractCollects(doc, cuisine, (doc) => doc.tags.cuisine);
+      extractCollects(doc, rental, (doc) => doc.features.rental);
+      extractCollects(doc, clothes, (doc) => doc.features.clothes);
+      extractCollects(doc, cuisine, (doc) => doc.features.cuisine);
 
-      extractNumerics(doc, rank, (doc) => doc.tags.rank);
-      extractNumerics(doc, min_age, (doc) => doc.tags.min_age);
-      extractNumerics(doc, capacity, (doc) => doc.tags.capacity);
+      extractNumerics(doc, rank, (doc) => doc.features.rank);
+      extractNumerics(doc, capacity, (doc) => doc.features.capacity);
+      extractNumerics(doc, minimum_age, (doc) => doc.features.minimum_age);
 
       if (++cnt >= 1000) { tot += cnt; cnt = 0; logger.info(`Still working... Processed ${tot} documents.`); }
     }
@@ -121,10 +111,13 @@ async function index() {
 
     // insert keywords
 
-    await index.insertOne({ _id: "keywords", keywords: [ ...keywords.keys() ].map(key => {
-      const item = keywords.get(key);
-      return { ...item, tags: [ ...item.tags ] }; // tags as an array!
-    })});
+    await index.insertOne({
+      _id: "keywords",
+      keywords: [ ...keywords.keys() ].map(key => {
+        const item = keywords.get(key);
+        return { ...item, features: [ ...item.features ] }; // features as an array!
+      })
+    });
 
     // insert limits
 
@@ -137,8 +130,8 @@ async function index() {
         clothes: map2arr(clothes),
         cuisine: map2arr(cuisine),
         rank: rank,
-        min_age: min_age,
-        capacity: capacity
+        capacity: capacity,
+        minimum_age: minimum_age
       }
     });
 

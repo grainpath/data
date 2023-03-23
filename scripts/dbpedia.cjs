@@ -168,9 +168,10 @@ async function dbpedia() {
         return {
           $set: {
             "name": obj.name,
-            "tags.description": obj.description,
-            "tags.image": obj.image,
-            "tags.website": obj.website,
+            "features.name": obj.name,
+            "features.description": obj.description,
+            "features.image": obj.image,
+            "features.website": obj.website,
             "linked.dbpedia": obj.dbpedia,
             "linked.yago": obj.yago
           }
