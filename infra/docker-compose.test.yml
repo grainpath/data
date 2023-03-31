@@ -7,3 +7,11 @@ services:
       - 27017:27017
     volumes:
       - /home/user/grainpath/db:/data/db
+  osrm:
+    image: osrm/osrm-backend:latest
+    container_name: osrm
+    ports:
+      - 27018:5000
+    volumes:
+      - /home/user/grainpath/osrm:/data
+    command: "osrm-routed --algorithm mld /data/czech-republic-latest.osrm"
