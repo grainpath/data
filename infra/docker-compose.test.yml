@@ -14,4 +14,4 @@ services:
       - 27018:5000
     volumes:
       - /home/user/grainpath/osrm:/data
-    command: "osrm-routed --algorithm mld /data/czech-republic-latest.osrm"
+    command: "osrm-routed --max-viaroute-size 500 --max-table-size 500 --algorithm mld /data/czech-republic-latest.osrm"

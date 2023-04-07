@@ -8,11 +8,11 @@ const stringifyStream = require("stream-to-string");
 const { MONGO_CONNECTION_STRING } = require("./const.cjs"); 
 const {
   getPayload,
-  writeToDatabase,
   reportPayload,
   reportFetchedItems,
   reportFinished,
-  reportError
+  reportError,
+  writeUpdateToDatabase
 } = require("./share.cjs");
 
 const DBPEDIA_JSONLD_CONTEXT = {
@@ -48,6 +48,7 @@ const DBPEDIA_JSONLD_CONTEXT = {
 };
 
 const DBPEDIA_ACCEPT_CONTENT = "text/turtle";
+
 const DBPEDIA_SPARQL_ENDPOINT = "https://dbpedia.org/sparql";
 
 const NQUADS_ACCEPT_CONTENT = "application/n-quads";
@@ -73,28 +74,28 @@ CONSTRUCT {
     my:website ?website .
 }
 WHERE {
-  VALUES ?wikidataId { ${payload} }
-  ?dbPediaId owl:sameAs ?wikidataId .
-  OPTIONAL {
-    ?dbPediaId rdfs:label | foaf:name | dbp:officialName ?name .
-    FILTER(LANG(?name) = "en" && STRLEN(STR(?name)) > 0)
-  }
-  OPTIONAL {
-    ?dbPediaId rdfs:comment ?description .
-    FILTER(LANG(?description) = "en" && STRLEN(STR(?description)) > 0)
-  }
-  OPTIONAL {
-  	?dbPediaId owl:sameAs ?yagoId .
-    FILTER(ISURI(?yagoId) && STRSTARTS(STR(?yagoId), "http://yago-knowledge.org/resource/"))
-  }
-  OPTIONAL {
-    ?dbPediaId dbo:thumbnail ?image .
-    FILTER(ISURI(?image))
-  }
-  OPTIONAL {
-    ?dbPediaId foaf:homepage ?website .
-    FILTER(ISURI(?website))
-  }
+VALUES ?wikidataId { ${payload} }
+?dbPediaId owl:sameAs ?wikidataId .
+OPTIONAL {
+  ?dbPediaId rdfs:label | foaf:name | dbp:officialName | skos:prefLabel | skos:altLabel ?name .
+  FILTER(LANG(?name) = "en" && STRLEN(STR(?name)) > 0)
+}
+OPTIONAL {
+  ?dbPediaId rdfs:comment ?description .
+  FILTER(LANG(?description) = "en" && STRLEN(STR(?description)) > 0)
+}
+OPTIONAL {
+  ?dbPediaId owl:sameAs ?yagoId .
+  FILTER(ISURI(?yagoId) && STRSTARTS(STR(?yagoId), "http://yago-knowledge.org/resource/"))
+}
+OPTIONAL {
+  ?dbPediaId dbo:thumbnail ?image .
+  FILTER(ISURI(?image))
+}
+OPTIONAL {
+  ?dbPediaId foaf:homepage ?website .
+  FILTER(ISURI(?website))
+}
 }`;
 
 function fetchFromDbpedia(payload) {
@@ -168,17 +169,17 @@ async function dbpedia() {
         return {
           $set: {
             "name": obj.name,
-            "features.name": obj.name,
-            "features.description": obj.description,
-            "features.image": obj.image,
-            "features.website": obj.website,
+            "attributes.name": obj.name,
+            "attributes.description": obj.description,
+            "attributes.image": obj.image,
+            "attributes.website": obj.website,
             "linked.dbpedia": obj.dbpedia,
             "linked.yago": obj.yago
           }
         };
       };
 
-      await writeToDatabase(client, lst, upd);
+      await writeUpdateToDatabase(client, lst, upd);
       payload = payload.slice(window);
     }
 

@@ -19,7 +19,7 @@ namespace osm
         public List<double> coordinates { get; set; }
     }
 
-    internal sealed class OsmGrainFeatures
+    internal sealed class OsmGrainAttributes
     {
         internal sealed class Address
         {
@@ -163,7 +163,6 @@ namespace osm
 
         public OsmGrainLinked linked { get; set; } = new();
 
-        public OsmGrainFeatures features { get; set; } = new();
-
+        public OsmGrainAttributes attributes { get; set; } = new();
     }
 }

@@ -12,7 +12,7 @@ namespace osm
             var ks = new string[] { "name:en", "name", "alt_name", "brand", "operator" };
 
             foreach (var k in ks) {
-                if (tags.TryGetValue(k, out var v) && FeatureExtractor.IsNonTrivialString(v)) {
+                if (tags.TryGetValue(k, out var v) && AttributeExtractor.IsNonTrivialString(v)) {
                     name = v;
                 }
             }
@@ -23,7 +23,7 @@ namespace osm
             }
 
             grain.name = name;
-            grain.features.name = name;
+            grain.attributes.name = name;
         }
     }
 }

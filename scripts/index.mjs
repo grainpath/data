@@ -6,22 +6,26 @@ import {
   MONGO_GRAIN_COLLECTION,
   MONGO_INDEX_COLLECTION
 } from "./const.cjs";
+import {
+  getGrainCollection,
+  getIndexCollection
+} from "./share.cjs";
 
 /**
- * Extract keywords with features.
+ * Extract keywords with attributes.
  * @param {*} doc document that is currently considered.
- * @param {*} keywords 
+ * @param {*} keywords map for keeping extracted keyword counts.
  */
 function extractKeywords(doc, keywords) {
 
-  const base = (word) => { return { label: word, count: 0, features: new Set() }; };
+  const base = (word) => { return { label: word, count: 0, attributes: new Set() }; };
 
   doc.keywords.forEach(word => {
     if (!keywords.has(word)) { keywords.set(word, base(word)); }
     const item = keywords.get(word);
 
     ++item.count;
-    Object.keys(doc.features).forEach(key => item.features.add(key));
+    Object.keys(doc.attributes).forEach(key => item.attributes.add(key));
   });
 }
 
@@ -43,7 +47,7 @@ function extractCollects(doc, collect, func) {
 }
 
 /**
- * Extract limits of the numeric features, such as `capacity`, `minimum_age`,
+ * Extract limits of the numeric attributes, such as `capacity`, `minimum_age`,
  * and `rank`.
  * @param {*} doc document that is currently considered.
  * @param {*} numeric objects storing limits.
@@ -67,14 +71,13 @@ async function index() {
   const logger = consola.create();
 
   const client = new MongoClient(MONGO_CONNECTION_STRING);
-  const database = client.db(MONGO_DATABASE);
 
   try {
-    await database.dropCollection(MONGO_INDEX_COLLECTION, {  });
+    await client.db(MONGO_DATABASE).dropCollection(MONGO_INDEX_COLLECTION, {  });
   } catch (ex) { logger.error(ex.message); }
 
-  const grain = database.collection(MONGO_GRAIN_COLLECTION);
-  const index = database.collection(MONGO_INDEX_COLLECTION);
+  const grain = getGrainCollection(client, MONGO_GRAIN_COLLECTION);
+  const index = getIndexCollection(client, MONGO_INDEX_COLLECTION);
 
   let cnt = 0, tot = 0;
 
@@ -94,13 +97,13 @@ async function index() {
 
       extractKeywords(doc, keywords);
 
-      extractCollects(doc, rental, (doc) => doc.features.rental);
-      extractCollects(doc, clothes, (doc) => doc.features.clothes);
-      extractCollects(doc, cuisine, (doc) => doc.features.cuisine);
+      extractCollects(doc, rental, (doc) => doc.attributes.rental);
+      extractCollects(doc, clothes, (doc) => doc.attributes.clothes);
+      extractCollects(doc, cuisine, (doc) => doc.attributes.cuisine);
 
-      extractNumerics(doc, rank, (doc) => doc.features.rank);
-      extractNumerics(doc, capacity, (doc) => doc.features.capacity);
-      extractNumerics(doc, minimum_age, (doc) => doc.features.minimum_age);
+      extractNumerics(doc, rank, (doc) => doc.attributes.rank);
+      extractNumerics(doc, capacity, (doc) => doc.attributes.capacity);
+      extractNumerics(doc, minimum_age, (doc) => doc.attributes.minimum_age);
 
       if (++cnt >= 1000) { tot += cnt; cnt = 0; logger.info(`Still working... Processed ${tot} documents.`); }
     }
@@ -115,7 +118,7 @@ async function index() {
       _id: "keywords",
       keywords: [ ...keywords.keys() ].map(key => {
         const item = keywords.get(key);
-        return { ...item, features: [ ...item.features ] }; // features as an array!
+        return { ...item, attributes: [ ...item.attributes ] }; // attributes as an array!
       })
     });
 

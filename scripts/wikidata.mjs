@@ -1,28 +1,19 @@
 import jsonld from "jsonld";
-import { MongoClient } from "mongodb";
-
-import {
-  isValidKeyword,
-  MONGO_CONNECTION_STRING,
-} from "./const.cjs";
-
-import {
-  getPayload,
-  reportError,
-  reportFetchedItems,
-  reportFinished,
-  reportPayload,
-  writeToDatabase
-} from "./share.cjs";
+import { isValidKeyword } from "./const.cjs";
 
 const WIKIDATA_ACCEPT_CONTENT = "application/n-quads";
 
 const WIKIDATA_JSONLD_CONTEXT = {
   "my": "http://example.com/",
   "wd": "http://www.wikidata.org/entity/",
+  "geo": "http://www.opengis.net/ont/geosparql#",
   "name": {
     "@id": "my:name",
     "@container": "@language"
+  },
+  "location": {
+    "@id": "my:location",
+    "@type": "geo:wktLiteral"
   },
   "description": {
     "@id": "my:description",
@@ -39,49 +30,15 @@ const WIKIDATA_JSONLD_CONTEXT = {
   "geonames": {
     "@id": "my:geonames"
   },
+  "mapycz": {
+    "@id": "my:mapycz"
+  },
   "wikidata": "@id"
 };
 
 const WIKIDATA_SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
 
-const wikidataQuery = (payload) => `
-PREFIX my: <http://example.com/>
-PREFIX dita: <http://purl.org/dita/ns#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX schema: <http://schema.org/>
-PREFIX wd: <http://www.wikidata.org/entity/>
-PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-CONSTRUCT {
-  ?wikidataId
-    my:name ?name ;
-    my:description ?description ;
-    my:keywords ?keyword ;
-    my:image ?image ;
-    my:geonames ?geoNamesId .
-}
-WHERE {
-  VALUES ?wikidataId { ${payload} }
-  OPTIONAL { 
-    ?wikidataId rdfs:label ?name .
-    FILTER(LANG(?name) = "en" && STRLEN(STR(?name)) > 0)
-  }
-  OPTIONAL {
-    ?wikidataId schema:description ?description .
-    FILTER(LANG(?description) = "en" && STRLEN(STR(?description)) > 0)
-  }
-  OPTIONAL {
-    ?wikidataId wdt:P31 ?instanceOf .
-    ?instanceOf rdfs:label ?keyword .
-    FILTER(LANG(?keyword) = "en" && STRLEN(STR(?keyword)) > 0)
-  }
-  OPTIONAL {
-    ?wikidataId wdt:P18 ?image .
-    FILTER(ISURI(?image))
-  }
-  OPTIONAL { ?wikidataId wdt:P1566 ?geoNamesId . }
-}`;
-
-function fetchFromWikidata(payload) {
+export function fetchFromWikidata(query) {
 
   return fetch(WIKIDATA_SPARQL_ENDPOINT, {
     method: "POST",
@@ -89,95 +46,101 @@ function fetchFromWikidata(payload) {
       "Accept": WIKIDATA_ACCEPT_CONTENT + "; charset=utf-8",
       "Content-Type": "application/x-www-form-urlencoded",
       "User-Agent": "GrainPath (https://github.com/grainpath)" },
-    body: "query=" + encodeURIComponent(wikidataQuery(payload))
+    body: "query=" + encodeURIComponent(query)
   })
   .then((res) => res.text())
   .then((txt) => jsonld.fromRDF(txt, { format: WIKIDATA_ACCEPT_CONTENT }))
   .then((doc) => jsonld.compact(doc, WIKIDATA_JSONLD_CONTEXT));
 }
 
-function constructFromJson(json) {
+export const PREAMBLE_SHORT = `PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX my: <http://example.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX schema: <http://schema.org/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>`;
 
-  const g = json["@graph"];
+export const PREAMBLE_LONG = `${PREAMBLE_SHORT}
+PREFIX bd: <http://www.bigdata.com/rdf#>
+PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+PREFIX wikibase: <http://wikiba.se/ontology#>`;
 
-  if (g === undefined) { return []; }
+export const OPTIONAL_NAME = `OPTIONAL { 
+  ?wikidataId rdfs:label | dct:title | foaf:name | skos:prefLabel | skos:altLabel ?name.
+  FILTER(LANG(?name) = "en" && STRLEN(STR(?name)) > 0)
+}`;
 
-  return g.map((entity) => {
-    const obj = { };
-    const get = (a) => Array.isArray(a) ? a[0] : a;
+export const OPTIONAL_DESCRIPTION = `OPTIONAL {
+  ?wikidataId schema:description | rdfs:comment ?description.
+  FILTER(LANG(?description) = "en" && STRLEN(STR(?description)) > 0)
+}`;
 
-    if (!entity.keywords) { entity.keywords = { "en": [] }; }
+export const OPTIONAL_KEYWORDS = `OPTIONAL {
+  ?wikidataId wdt:P31 ?instanceOf.
+  ?instanceOf rdfs:label ?keyword.
+  FILTER(LANG(?keyword) = "en" && STRLEN(STR(?keyword)) > 0)
+}`;
 
-    let keywords = Array.isArray(entity.keywords.en)
-      ?   entity.keywords.en
-      : [ entity.keywords.en ];
+export const OPTIONAL_IMAGE = `OPTIONAL {
+  ?wikidataId wdt:P18 ?image.
+  FILTER(ISURI(?image))
+}`;
 
-    keywords = keywords.map((keyword) => {
-      keyword = keyword.toLowerCase().replace(' ', '_');
+export const OPTIONAL_MAPYCZ = `OPTIONAL {
+  ?wikidataId wdt:P8988 ?mapyCzId.
+}`;
+
+export const OPTIONAL_GEONAMES = `OPTIONAL {
+  ?wikidataId wdt:P1566 ?geoNamesId.
+}`;
+
+export const keywordToSnake = (keyword) => keyword.toLowerCase().replace(' ', '_');
+
+export const snakeToKeyword = (snake) => (snake.charAt(0).toUpperCase() + snake.slice(1)).replace('_', ' ');
+
+export const getEntityList = (json) => json["@graph"] ?? [ ];
+
+export function constructFromEntity(ent) {
+  const obj = { };
+  const get = (a) => Array.isArray(a) ? a[0] : a;
+
+  if (!ent.keywords) { ent.keywords = { "en": [ ] }; }
+
+  let keywords = Array.isArray(ent.keywords.en)
+    ?  ent.keywords.en
+    : [ent.keywords.en];
+  
+  keywords = keywords
+    .map((keyword) => {
+      keyword = keywordToSnake(keyword);
       return (isValidKeyword(keyword)) ? keyword : undefined;
     })
     .filter((keyword) => keyword !== undefined);
 
-    obj.keywords = [ ...new Set(keywords) ];
+  obj.keywords = [...new Set(keywords)];
 
-    // en-containers
-    obj.name = get(entity.name?.en);
-    obj.description = get(entity.description?.en);
+  // en-containers
+  obj.name = get(ent.name?.en);
+  obj.description = get(ent.description?.en);
 
-    // lists
-    obj.image = get(entity.image);
-    obj.geonames = get(entity.geonames);
+  // lists
+  obj.image = get(ent.image);
+  obj.mapycz = get(ent.mapycz);
+  obj.geonames = get(ent.geonames);
 
-    // existing
-    obj.wikidata = entity.wikidata.substring(3);
+  // existing
+  obj.wikidata = ent.wikidata.substring(3);
 
-    return obj;
-  });
+  return obj;
 }
 
-async function wikidata() {
+export function appendLocationToObject(obj, ent) {
 
-  let cnt = 0;
-  const resource = "Wikidata";
-  const client = new MongoClient(MONGO_CONNECTION_STRING);
+  const re = /POINT\((?<lon>-?\d+\.\d+) (?<lat>-?\d+\.\d+)\)/i;
+  const { groups: { lon, lat } } = re.exec(ent.location);
+  obj.location = { lon: parseFloat(lon), lat: parseFloat(lat) };
 
-  try {
-    let payload = await getPayload(client);
-    reportPayload(payload, resource);
-
-    while (payload.length) {
-
-      const window = 100;
-
-      const lst = await fetchFromWikidata(payload.slice(0, window).join(' '))
-        .then((jsn) => constructFromJson(jsn));
-
-      cnt += lst.length;
-      reportFetchedItems(lst, resource);
-
-      const upd = (obj) => {
-        return {
-          $set: {
-            "name": obj.name,
-            "features.name": obj.name,
-            "features.description": obj.description,
-            "features.image": obj.image,
-            "linked.geonames": obj.geonames
-          },
-          $addToSet: {
-            "keywords": { $each: obj.keywords }
-          }
-        }
-      };
-
-      await writeToDatabase(client, lst, upd);
-      payload = payload.slice(window);
-    }
-
-    reportFinished(resource, cnt);
-  }
-  catch (ex) { reportError(ex); }
-  finally { await client.close(); }
+  return obj;
 }
-
-wikidata();

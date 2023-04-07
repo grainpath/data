@@ -12,17 +12,18 @@ async function snake() {
   const logger = consola.create();
 
   const client = new MongoClient(MONGO_CONNECTION_STRING);
+
   const collection = client.db(MONGO_DATABASE).collection(MONGO_GRAIN_COLLECTION);
 
   logger.info("Started document processing.");
 
   try {
-    const gc = collection.find().project({ keywords: 1, features: { rental: 1, clothes: 1, cuisine: 1 } });
+    const gc = collection.find().project({ keywords: 1, attributes: { rental: 1, clothes: 1, cuisine: 1 } });
     const func = (arr) => arr ? arr.map(item => item.replace('_', ' ')) : undefined;
 
     while (await gc.hasNext()) {
       const g = await gc.next();
-      const f = g.features;
+      const f = g.attributes;
 
       await collection.updateOne(
         {
@@ -31,9 +32,9 @@ async function snake() {
         {
           $set: {
             "keywords": func(g.keywords),
-            "features.clothes": func(f.clothes),
-            "features.cuisine": func(f.cuisine),
-            "features.rental": func(f.rental)
+            "attributes.rental": func(f.rental),
+            "attributes.clothes": func(f.clothes),
+            "attributes.cuisine": func(f.cuisine),
           }
         },
         {
