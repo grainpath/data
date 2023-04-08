@@ -3,8 +3,9 @@ import consola from "consola";
 import fetch from "node-fetch";
 import {
   ASSETS_BASE_ADDR,
+  convertSnakeToKeyword,
   isValidKeyword
-} from "./const.cjs";
+} from "./shared.cjs";
 
 /**
  * Extracted value should occur at least `COUNT_LIMIT` times.
@@ -21,7 +22,7 @@ const FORBIDDEN_VALUES = new Set([
   "antenna",
   "apron",
   "attached",
-  "bare_rock",
+  "bare rock",
   "barrack",
   "bay",
   "building",
@@ -38,7 +39,7 @@ const FORBIDDEN_VALUES = new Set([
   "demolished",
   "destroyed",
   "detached",
-  "detached_house",
+  "detached house",
   "disused",
   "empty",
   "exit",
@@ -51,27 +52,27 @@ const FORBIDDEN_VALUES = new Set([
   "hangar",
   "heath",
   "helipad",
-  "holding_position",
+  "holding position",
   "home",
   "house",
   "incomplete",
-  "jet_bridge",
+  "jet bridge",
   "mast",
   "maybe",
-  "mean_low_water_springs",
-  "mixed_use",
-  "mixed_used",
-  "motorcycle_parking",
+  "mean low water springs",
+  "mixed use",
+  "mixed used",
+  "motorcycle parking",
   "mud",
   "no",
   "occupied",
   "obstacle",
   "outbuilding",
   "parking",
-  "parking_entrance",
-  "parking_exit",
-  "parking_position",
-  "parking_space",
+  "parking entrance",
+  "parking exit",
+  "parking position",
+  "parking space",
   "part",
   "place",
   "platform",
@@ -91,7 +92,7 @@ const FORBIDDEN_VALUES = new Set([
   "scrub",
   "semi",
   "semidetached",
-  "semidetached_house",
+  "semidetached house",
   "service",
   "shingle",
   "shops",
@@ -99,22 +100,22 @@ const FORBIDDEN_VALUES = new Set([
   "silo",
   "sinkhole",
   "small",
-  "stop_area",
-  "stop_position",
-  "survey_point",
+  "stop area",
+  "stop position",
+  "survey point",
   "taxilane",
   "taxiway",
   "transportation",
   "tree",
-  "tree_row",
+  "tree row",
   "unclassified",
   "undefined",
   "unit",
   "units",
   "unknown",
-  "utility_pole",
-  "ventilation_shaft",
-  "waste_basket",
+  "utility pole",
+  "ventilation shaft",
+  "waste basket",
   "water",
   "wetland",
   "windsock",
@@ -150,7 +151,7 @@ async function extract(args) {
             // extract only valid values
             item.value
               .split(/[\s;,]+/)
-              .map(value => value.toLowerCase())
+              .map(value => convertSnakeToKeyword(value))
               .filter(value => isValidKeyword(value) && !FORBIDDEN_VALUES.has(value))
               .forEach(value => {
                 if (!dict.has(value)) { dict.set(value, 0); }
@@ -159,7 +160,6 @@ async function extract(args) {
           });
         })
         .then(() => {
-
           const file = `${ASSETS_BASE_ADDR}/tags/${key}.json`;
 
           // Map does not maintain lexicographic order!
@@ -175,7 +175,6 @@ async function extract(args) {
         })
         .catch(err => console.log(err));
     }
-
     logger.info("Finished processing OSM tags.");
   }
   catch (ex) { logger.error(ex); }

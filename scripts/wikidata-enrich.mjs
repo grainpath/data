@@ -1,13 +1,13 @@
 import { MongoClient } from "mongodb";
-import { MONGO_CONNECTION_STRING } from "./const.cjs";
 import {
   getPayload,
+  MONGO_CONNECTION_STRING,
   reportError,
   reportFetchedItems,
   reportFinished,
   reportPayload,
   writeUpdateToDatabase
-} from "./share.cjs";
+} from "./shared.cjs";
 import {
   constructFromEntity,
   fetchFromWikidata,

@@ -5,7 +5,7 @@ import {
   MONGO_DATABASE,
   MONGO_GRAIN_COLLECTION,
   MONGO_INDEX_COLLECTION
-} from "./const.cjs";
+} from "./shared.cjs";
 
 const logger = consola.create();
 

@@ -1,15 +1,13 @@
 import consola from "consola";
 import { MongoClient } from "mongodb";
 import {
+  getGrainCollection,
+  getIndexCollection,
   MONGO_CONNECTION_STRING,
   MONGO_DATABASE,
   MONGO_GRAIN_COLLECTION,
   MONGO_INDEX_COLLECTION
-} from "./const.cjs";
-import {
-  getGrainCollection,
-  getIndexCollection
-} from "./share.cjs";
+} from "./shared.cjs";
 
 /**
  * Extract keywords with attributes.
@@ -47,7 +45,7 @@ function extractCollects(doc, collect, func) {
 }
 
 /**
- * Extract limits of the numeric attributes, such as `capacity`, `minimum_age`,
+ * Extract limits of the numeric attributes, such as `capacity`, `minimumAge`,
  * and `rank`.
  * @param {*} doc document that is currently considered.
  * @param {*} numeric objects storing limits.
@@ -85,7 +83,7 @@ async function index() {
 
   try {
     const [ keywords, clothes, cuisine, rental ] = arr(4).map(() => new Map());
-    const [ rank, capacity, minimum_age ] = arr(3).map(() => {
+    const [ rank, capacity, minimumAge ] = arr(3).map(() => {
       return { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER };
     });
 
@@ -103,7 +101,7 @@ async function index() {
 
       extractNumerics(doc, rank, (doc) => doc.attributes.rank);
       extractNumerics(doc, capacity, (doc) => doc.attributes.capacity);
-      extractNumerics(doc, minimum_age, (doc) => doc.attributes.minimum_age);
+      extractNumerics(doc, minimumAge, (doc) => doc.attributes.minimumAge);
 
       if (++cnt >= 1000) { tot += cnt; cnt = 0; logger.info(`Still working... Processed ${tot} documents.`); }
     }
@@ -116,25 +114,25 @@ async function index() {
 
     await index.insertOne({
       _id: "keywords",
-      keywords: [ ...keywords.keys() ].map(key => {
+      keywords: [...keywords.keys()].map(key => {
         const item = keywords.get(key);
-        return { ...item, attributes: [ ...item.attributes ] }; // attributes as an array!
+        return { ...item, attributes: [...item.attributes] }; // attributes as an array!
       })
     });
 
-    // insert limits
+    // insert bounds
 
-    const map2arr = (m) => [ ...m.keys() ].map(key => m.get(key));
+    const map2arr = (m) => [...m.keys()].map(key => m.get(key));
 
     await index.insertOne({
-      _id: "limits",
-      limits: {
+      _id: "bounds",
+      bounds: {
         rental: map2arr(rental),
         clothes: map2arr(clothes),
         cuisine: map2arr(cuisine),
         rank: rank,
         capacity: capacity,
-        minimum_age: minimum_age
+        minimumAge: minimumAge
       }
     });
 

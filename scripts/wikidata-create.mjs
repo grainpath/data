@@ -1,18 +1,19 @@
 import { Command } from "commander";
 import { MongoClient } from "mongodb";
-import { MONGO_CONNECTION_STRING } from "./const.cjs";
 import {
+  convertKeywordToName,
   getGrainCollection,
+  MONGO_CONNECTION_STRING,
   reportCategory,
   reportCreatedItems,
   reportError,
   reportFetchedItems,
   reportFinished,
   writeCreateToDatabase
-} from "./share.cjs";
+} from "./shared.cjs";
 import {
-  appendLocationToObject,
   constructFromEntity,
+  extractLocation,
   fetchFromWikidata,
   getEntityList,
   OPTIONAL_DESCRIPTION,
@@ -21,8 +22,7 @@ import {
   OPTIONAL_KEYWORDS,
   OPTIONAL_MAPYCZ,
   OPTIONAL_NAME,
-  PREAMBLE_LONG,
-  snakeToKeyword
+  PREAMBLE_LONG
 } from "./wikidata.mjs";
 
 const wikidataQuery = (category, sw, ne) => `${PREAMBLE_LONG}
@@ -65,7 +65,7 @@ function concat(a, b) { return [a, b].join(' '); }
 
 function constructFromJson(json) {
   return getEntityList(json)
-    .map((e) => appendLocationToObject(constructFromEntity(e), e));
+    .map((e) => extractLocation(constructFromEntity(e), e));
 }
 
 /**
@@ -88,9 +88,9 @@ async function wikidataCreate() {
       const query = wikidataQuery(cat, concat(s, w), concat(n, e));
       const objs = (await fetchFromWikidata(query)
         .then((jsn) => constructFromJson(jsn)))
-        .filter((o) => o.location && o.keywords.length > 0);
+        .filter((obj) => obj.location && obj.keywords.length > 0);
 
-      objs.forEach((o) => o.name = o.name ?? snakeToKeyword(o.keywords[0]));
+      objs.forEach((obj) => obj.name = obj.name ?? convertKeywordToName(obj.keywords[0]));
 
       reportFetchedItems(objs, resource);
 
@@ -115,8 +115,8 @@ async function wikidataCreate() {
             },
             linked: {
               mapycz: obj.mapycz,
-              wikidata: obj.wikidata,
-              geonames: obj.geonames
+              geonames: obj.geonames,
+              wikidata: obj.wikidata
             }
           };
 

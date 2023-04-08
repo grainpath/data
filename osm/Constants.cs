@@ -2,7 +2,7 @@ using System.IO;
 
 namespace osm;
 
-static class Constants
+internal static class Constants
 {
     public static readonly string MONGO_DATABASE = "grainpath";
 

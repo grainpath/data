@@ -1,6 +1,6 @@
 # How to set up database?
 
-`init.sh` ~> `tags.sh` ~> `osm` ~> `wikidata.sh` ~> `dbpedia.sh` ~> `snake.sh` ~> `index.sh`.
+`init.sh` ~> `tags.sh` ~> `osm` ~> `wikidata-enrich.sh` ~> `wikidata-create.sh` ~> `dbpedia.sh` ~> `index.sh`.
 
 # Extract points in Prague
 

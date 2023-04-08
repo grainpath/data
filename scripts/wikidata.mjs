@@ -1,5 +1,5 @@
 import jsonld from "jsonld";
-import { isValidKeyword } from "./const.cjs";
+import { isValidKeyword } from "./shared.cjs";
 
 const WIKIDATA_ACCEPT_CONTENT = "application/n-quads";
 
@@ -96,39 +96,29 @@ export const OPTIONAL_GEONAMES = `OPTIONAL {
   ?wikidataId wdt:P1566 ?geoNamesId.
 }`;
 
-export const keywordToSnake = (keyword) => keyword.toLowerCase().replace(' ', '_');
-
-export const snakeToKeyword = (snake) => (snake.charAt(0).toUpperCase() + snake.slice(1)).replace('_', ' ');
-
-export const getEntityList = (json) => json["@graph"] ?? [ ];
+export const getEntityList = (json) => json["@graph"] ?? [];
 
 export function constructFromEntity(ent) {
   const obj = { };
-  const get = (a) => Array.isArray(a) ? a[0] : a;
+  const arr = (a) => Array.isArray(a) ? a : [a];
+  const fst = (a) => Array.isArray(a) ? a[0] : a;
 
-  if (!ent.keywords) { ent.keywords = { "en": [ ] }; }
+  ent.keywords = ent.keywords ?? { "en": [] };
 
-  let keywords = Array.isArray(ent.keywords.en)
-    ?  ent.keywords.en
-    : [ent.keywords.en];
-  
-  keywords = keywords
-    .map((keyword) => {
-      keyword = keywordToSnake(keyword);
-      return (isValidKeyword(keyword)) ? keyword : undefined;
-    })
+  const keywords = arr(ent.keywords.en)
+    .map((keyword) => isValidKeyword(keyword) ? keyword : undefined)
     .filter((keyword) => keyword !== undefined);
 
   obj.keywords = [...new Set(keywords)];
 
   // en-containers
-  obj.name = get(ent.name?.en);
-  obj.description = get(ent.description?.en);
+  obj.name = fst(ent.name?.en);
+  obj.description = fst(ent.description?.en);
 
   // lists
-  obj.image = get(ent.image);
-  obj.mapycz = get(ent.mapycz);
-  obj.geonames = get(ent.geonames);
+  obj.image = fst(ent.image);
+  obj.mapycz = fst(ent.mapycz);
+  obj.geonames = fst(ent.geonames);
 
   // existing
   obj.wikidata = ent.wikidata.substring(3);
@@ -136,11 +126,11 @@ export function constructFromEntity(ent) {
   return obj;
 }
 
-export function appendLocationToObject(obj, ent) {
+export function extractLocation(obj, ent) {
 
   const re = /POINT\((?<lon>-?\d+\.\d+) (?<lat>-?\d+\.\d+)\)/i;
   const { groups: { lon, lat } } = re.exec(ent.location);
-  obj.location = { lon: parseFloat(lon), lat: parseFloat(lat) };
+  obj.location = { lon: Number(lon), lat: Number(lat) };
 
   return obj;
 }

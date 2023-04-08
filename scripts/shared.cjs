@@ -1,10 +1,11 @@
 const consola = require("consola");
 
-const {
-  MONGO_DATABASE,
-  MONGO_GRAIN_COLLECTION,
-  MONGO_INDEX_COLLECTION,
-} = require("./const.cjs");
+const ASSETS_BASE_ADDR = "../assets";
+
+const MONGO_DATABASE = "grainpath";
+const MONGO_GRAIN_COLLECTION = "grain";
+const MONGO_INDEX_COLLECTION = "index";
+const MONGO_CONNECTION_STRING = process.env.GRAINPATH_DBM_CONN;
 
 async function getPayload(client) {
   const tar = "linked.wikidata";
@@ -68,16 +69,54 @@ function reportFinished(resource, tot) {
   consola.info(`Finished processing ${resource}, processed ${tot} items.`);
 }
 
+function convertKeywordToName(keyword) {
+  return keyword.charAt(0).toUpperCase() + keyword.slice(1);
+}
+
+function convertSnakeToKeyword(snake) {
+  return snake.toLowerCase().replace('_', ' ');
+}
+
+/**
+ * Extracted value should have lehgth at least `MIN` chars.
+ */
+const KEYWORD_LENGTH_LIMIT_MIN = 3;
+
+/**
+ * Extracted value should have lehgth at most `MAX` chars.
+ */
+const KEYWORD_LENGTH_LIMIT_MAX = 25;
+
+/**
+ * All extracted keywords should comply with the snake_case-without-underscores
+ * pattern.
+ */
+const KEYWORD_PATTERN = /^[a-z]+(?:[ ][a-z]+)*$/;
+
+function isValidKeyword(keyword) {
+  return (new RegExp(KEYWORD_PATTERN)).test(keyword)
+    && keyword.length >= KEYWORD_LENGTH_LIMIT_MIN
+    && keyword.length <= KEYWORD_LENGTH_LIMIT_MAX
+};
+
 module.exports = {
+  ASSETS_BASE_ADDR: ASSETS_BASE_ADDR,
+  MONGO_DATABASE: MONGO_DATABASE,
+  MONGO_GRAIN_COLLECTION: MONGO_GRAIN_COLLECTION,
+  MONGO_INDEX_COLLECTION: MONGO_INDEX_COLLECTION,
+  MONGO_CONNECTION_STRING: MONGO_CONNECTION_STRING,
   getPayload: getPayload,
+  getGrainCollection: getGrainCollection,
+  getIndexCollection: getIndexCollection,
+  writeUpdateToDatabase: writeUpdateToDatabase,
+  writeCreateToDatabase: writeCreateToDatabase,
   reportError: reportError,
   reportPayload: reportPayload,
   reportCategory: reportCategory,
   reportFetchedItems: reportFetchedItems,
   reportCreatedItems: reportCreatedItems,
   reportFinished: reportFinished,
-  getGrainCollection: getGrainCollection,
-  getIndexCollection: getIndexCollection,
-  writeUpdateToDatabase: writeUpdateToDatabase,
-  writeCreateToDatabase: writeCreateToDatabase
+  convertKeywordToName: convertKeywordToName,
+  convertSnakeToKeyword: convertSnakeToKeyword,
+  isValidKeyword: isValidKeyword
 };

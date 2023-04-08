@@ -4,39 +4,40 @@ using System.Linq;
 using CommandLine;
 using Microsoft.Extensions.Logging;
 
-namespace osm
+namespace osm;
+
+internal class Program
 {
-    class Program
+    private sealed class Options
     {
-        private sealed class Options
+        [Option("file", Required = true)]
+        public string File { get; set; }
+
+        [Option("bbox", Required = false)]
+        public IEnumerable<string> Bbox { get; set; }
+    }
+
+    private static void Main(string[] args)
+    {
+        var log = LoggerFactory
+            .Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Information))
+            .CreateLogger<Program>();
+
+        var opt = new Parser().ParseArguments<Options>(args).Value;
+
+        log.LogInformation("File {0} is being processed...", opt.File);
+
+        try
         {
-            [Option("file", Required = true)]
-            public string File { get; set; }
+            var source = SourceFactory.GetInstance(log, opt.File, opt.Bbox.ToList());
+            var target = TargetFactory.GetInstance(log);
 
-            [Option("bbox", Required = false)]
-            public IEnumerable<string> Bbox { get; set; }
-        }
-
-        static void Main(string[] args)
-        {
-            var log = LoggerFactory
-                .Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Information))
-                .CreateLogger<Program>();
-
-            var opt = new Parser().ParseArguments<Options>(args).Value;
-
-            log.LogInformation("File {0} is being processed...", opt.File);
-
-            try {
-                var source = SourceFactory.GetInstance(log, opt.File, opt.Bbox.ToList());
-                var target = TargetFactory.GetInstance(log);
-
-                foreach (var grain in source) {
-                    target.Consume(grain);
-                }
-                target.Complete();
+            foreach (var grain in source)
+            {
+                target.Consume(grain);
             }
-            catch (Exception ex) { log.LogError(ex.Message); }
+            target.Complete();
         }
+        catch (Exception ex) { log.LogError(ex.Message); }
     }
 }

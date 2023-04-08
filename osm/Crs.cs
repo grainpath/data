@@ -1,3 +1,5 @@
+namespace osm;
+
 /// <summary>
 /// EPSG:3857 bounds, see https://epsg.io/3857.
 /// </summary>

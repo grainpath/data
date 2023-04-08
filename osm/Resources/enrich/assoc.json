@@ -5,9 +5,9 @@
         "bar",
         "biergarten",
         "cafe",
-        "fast_food",
-        "food_court",
-        "ice_cream",
+        "fast food",
+        "food court",
+        "ice cream",
         "pub",
         "restaurant"
       ],
@@ -18,13 +18,13 @@
     {
       "values":[
         "college",
-        "driving_school",
+        "driving school",
         "kindergarten",
-        "language_school",
+        "language school",
         "library",
-        "toy_library",
+        "toy library",
         "training",
-        "music_school",
+        "music school",
         "school",
         "university"
       ],
@@ -34,20 +34,20 @@
     },
     {
       "values":[
-        "bicycle_parking",
-        "bicycle_repair_station",
-        "bicycle_rental",
-        "boat_rental",
-        "boat_sharing",
-        "bus_station",
-        "car_rental",
-        "car_sharing",
-        "car_wash",
-        "compressed_air",
-        "vehicle_inspection",
-        "charging_station",
-        "ferry_terminal",
-        "grit_bin",
+        "bicycle parking",
+        "bicycle repair station",
+        "bicycle rental",
+        "boat rental",
+        "boat sharing",
+        "bus station",
+        "car rental",
+        "car sharing",
+        "car wash",
+        "compressed air",
+        "vehicle inspection",
+        "charging station",
+        "ferry terminal",
+        "grit bin",
         "taxi"
       ],
       "enrich":[
@@ -58,7 +58,7 @@
       "values":[
         "atm",
         "bank",
-        "bureau_de_change"
+        "bureau de change"
       ],
       "enrich":[
         "financial"
@@ -66,14 +66,14 @@
     },
     {
       "values":[
-        "baby_hatch",
+        "baby hatch",
         "clinic",
         "dentist",
         "doctors",
         "hospital",
-        "nursing_home",
+        "nursing home",
         "pharmacy",
-        "social_facility",
+        "social facility",
         "veterinary"
       ],
       "enrich":[
@@ -82,10 +82,10 @@
     },
     {
       "values":[
-        "arts_centre",
+        "arts centre",
         "cinema",
         "planetarium",
-        "public_bookcase",
+        "public bookcase",
         "studio",
         "theatre"
       ],
@@ -96,13 +96,13 @@
     {
       "values":[
         "casino",
-        "community_centre",
-        "conference_centre",
-        "events_venue",
+        "community centre",
+        "conference centre",
+        "events venue",
         "fountain",
         "gambling",
         "nightclub",
-        "social_centre"
+        "social centre"
       ],
       "enrich":[
         "entertainment"
@@ -111,17 +111,17 @@
     {
       "values":[
         "courthouse",
-        "fire_station",
+        "fire station",
         "police",
-        "post_box",
-        "post_depot",
-        "post_office",
+        "post box",
+        "post depot",
+        "post office",
         "prison",
-        "ranger_station",
+        "ranger station",
         "townhall"
       ],
       "enrich":[
-        "public_service"
+        "public service"
       ]
     }
   ],
@@ -156,7 +156,7 @@
         "cathedral",
         "chapel",
         "church",
-        "kingdom_hall",
+        "kingdom hall",
         "monastery",
         "mosque",
         "presbytery",
@@ -176,7 +176,7 @@
         "alcohol",
         "bakery",
         "beverages",
-        "brewing_supplies",
+        "brewing supplies",
         "butcher",
         "cheese",
         "chocolate",
@@ -186,10 +186,10 @@
         "dairy",
         "deli",
         "farm",
-        "frozen_food",
+        "frozen food",
         "greengrocer",
-        "health_food",
-        "ice_cream",
+        "health food",
+        "ice cream",
         "pasta",
         "pastry",
         "seafood",
@@ -205,7 +205,7 @@
     },
     {
       "values":[
-        "department_store",
+        "department store",
         "general",
         "kiosk",
         "mall",
@@ -213,7 +213,7 @@
         "wholesale"
       ],
       "enrich":[
-        "general_shop"
+        "general shop"
       ]
     },
     {
@@ -223,12 +223,12 @@
         "cosmetics",
         "erotic",
         "hairdresser",
-        "hairdresser_supply",
-        "hearing_aids",
+        "hairdresser supply",
+        "hearing aids",
         "herbalist",
         "massage",
-        "medical_supply",
-        "nutrition_supplements",
+        "medical supply",
+        "nutrition supplements",
         "optician",
         "perfumery",
         "tattoo"
@@ -242,14 +242,14 @@
       "values":[
         "agrarian",
         "appliance",
-        "bathroom_furnishing",
+        "bathroom furnishing",
         "doityourself",
         "electrical",
         "energy",
         "fireplace",
         "florist",
-        "garden_centre",
-        "garden_furniture",
+        "garden centre",
+        "garden furniture",
         "gas",
         "glaziery",
         "groundskeeping",
@@ -275,12 +275,12 @@
         "doors",
         "flooring",
         "furniture",
-        "household_linen",
-        "interior_decoration",
+        "household linen",
+        "interior decoration",
         "kitchen",
         "lighting",
         "tiles",
-        "window_blind"
+        "window blind"
       ],
       "enrich":[
         "furniture",
@@ -292,10 +292,10 @@
         "computer",
         "electronics",
         "hifi",
-        "mobile_phone",
+        "mobile phone",
         "radiotechnics",
         "telecommunication",
-        "vacuum_cleaner"
+        "vacuum cleaner"
       ],
       "enrich":[
         "electronics"
@@ -306,8 +306,8 @@
         "atv",
         "boat",
         "car",
-        "car_repair",
-        "car_parts",
+        "car repair",
+        "car parts",
         "caravan",
         "fuel",
         "jetski",
@@ -329,11 +329,11 @@
         "golf",
         "hunting",
         "outdoor",
-        "military_surplus",
-        "scuba_diving",
+        "military surplus",
+        "scuba diving",
         "ski",
         "sports",
-        "swimming_pool"
+        "swimming pool"
       ],
       "enrich":[
         "outdoor",
@@ -344,10 +344,10 @@
       "values":[
         "camera",
         "music",
-        "musical_instrument"
+        "musical instrument"
       ],
       "enrich":[
-        "audio_video",
+        "audio video",
         "hobbies"
       ]
     },
@@ -361,7 +361,7 @@
         "photo",
         "trophy",
         "video",
-        "video_games"
+        "video games"
       ],
       "enrich":[
         "hobbies"

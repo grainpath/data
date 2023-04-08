@@ -1,112 +1,112 @@
 using OsmSharp;
 using System.Collections.Generic;
 
-namespace osm
+namespace osm;
+
+internal static class Inspector
 {
-    internal static class Inspector
+    private static readonly Dictionary<long, Point> _nodes = new();
+
+    public static Place Inspect(Node node)
     {
-        private static readonly Dictionary<long, Point> _nodes = new();
-
-        public static OsmGrain Inspect(Node node)
+        if (node is not null)
         {
-            if (node is not null) {
+            /* Nodes are used for way and relation definitions. Not defined
+             * nodes mean the file is broken, no reason to continue further. */
 
-                /* Nodes are used for way and relation definitions. Not defined
-                 * nodes mean the file is broken, no reason to continue further. */
+            var d = node.Id is not null && node.Longitude is not null && node.Latitude is not null;
 
-                var d = node.Id is not null && node.Longitude is not null && node.Latitude is not null;
+            if (!d) { Reporter.ReportUndefined(node); }
 
-                if (!d) { Reporter.ReportUndefined(node); }
+            // extract and verify position
 
-                // extract and verify position
+            var lon = node.Longitude.Value;
+            var lat = node.Latitude.Value;
 
-                var lon = node.Longitude.Value;
-                var lat = node.Latitude.Value;
+            if (!CrsEpsg3857.IsWithin(lon, lat)) { Reporter.ReportOutbound(node); }
 
-                if (!CrsEpsg3857.IsWithin(lon, lat)) { Reporter.ReportOutbound(node); }
+            // keep node for later usage
 
-                // keep node for later usage
+            _nodes.Add(node.Id.Value, new() { lon = lon, lat = lat });
 
-                _nodes.Add(node.Id.Value, new() { lon = lon, lat = lat });
+            if (node.Tags is null || node.Tags.Count == 0) { return null; }
 
-                if (node.Tags is null || node.Tags.Count == 0) { return null; }
+            // extract keywords and tags
 
-                // extract keywords and tags
+            var grain = new Place();
+            KeywordExtractor.Extract(node.Tags, grain.keywords);
 
-                var grain = new OsmGrain();
-                KeywordExtractor.Extract(node.Tags, grain.keywords);
+            if (grain.keywords.Count > 0)
+            {
+                AttributeExtractor.Extract(node.Tags, grain);
+                NameExtractor.Extract(node.Tags, grain);
+                LinkedExtractor.Extract(node, grain.linked);
 
-                if (grain.keywords.Count > 0) {
+                grain.location = new() { lon = lon, lat = lat };
+                grain.position = new(lon, lat);
 
-                    AttributeExtractor.Extract(node.Tags, grain);
-                    NameExtractor.Extract(node.Tags, grain);
-                    LinkedExtractor.Extract(node, grain.linked);
-
-                    grain.location = new() { lon = lon, lat = lat };
-                    grain.position = new(lon, lat);
-
-                    return grain;
-                }
+                return grain;
             }
-
-            return null;
         }
 
-        private static bool TryGetSequence(Way way, out List<Point> sequence)
+        return null;
+    }
+
+    private static bool TryGetSequence(Way way, out List<Point> sequence)
+    {
+        sequence = new();
+
+        foreach (var id in way.Nodes)
         {
-            sequence = new();
-
-            foreach (var id in way.Nodes) {
-                if (!_nodes.TryGetValue(id, out var node)) { return false; }
-                sequence.Add(new() { lon = node.lon, lat = node.lat });
-            }
-
-            return true;
+            if (!_nodes.TryGetValue(id, out var node)) { return false; }
+            sequence.Add(new() { lon = node.lon, lat = node.lat });
         }
 
-        public static OsmGrain Inspect(Way way)
+        return true;
+    }
+
+    public static Place Inspect(Way way)
+    {
+        if (way is not null)
         {
-            if (way is not null) {
+            // check if the way is properly defined
 
-                // check if the way is properly defined
+            if (way.Id is null || way.Nodes is null) { Reporter.ReportUndefined(way); }
 
-                if (way.Id is null || way.Nodes is null) { Reporter.ReportUndefined(way); }
+            // small or open ways are skipped, closed polygons pass
 
-                // small or open ways are skipped, closed polygons pass
+            if (way.Nodes.Length < 4 || way.Nodes[0] != way.Nodes[^1] || way.Tags is null || way.Tags.Count == 0) { return null; }
 
-                if (way.Nodes.Length < 4 || way.Nodes[0] != way.Nodes[^1] || way.Tags is null || way.Tags.Count == 0) { return null; }
+            var grain = new Place();
 
-                var grain = new OsmGrain();
+            if (!TryGetSequence(way, out var seq)) { return null; }
 
-                if (!TryGetSequence(way, out var seq)) { return null; }
+            KeywordExtractor.Extract(way.Tags, grain.keywords);
 
-                KeywordExtractor.Extract(way.Tags, grain.keywords);
+            if (grain.keywords.Count > 0)
+            {
+                AttributeExtractor.Extract(way.Tags, grain);
+                NameExtractor.Extract(way.Tags, grain);
+                LinkedExtractor.Extract(way, grain.linked);
 
-                if (grain.keywords.Count > 0) {
+                /* Note that both IsCounterClockwise and Centroid
+                 * use closedness of the shape verified above. */
 
-                    AttributeExtractor.Extract(way.Tags, grain);
-                    NameExtractor.Extract(way.Tags, grain);
-                    LinkedExtractor.Extract(way, grain.linked);
+                /* GeoJSON assumes counterclockwise external rings,
+                 * see https://www.rfc-editor.org/rfc/rfc7946#appendix-B.1! */
 
-                    /* Note that both IsCounterClockwise and Centroid
-                     * use closedness of the shape verified above. */
+                if (!Cartesian.IsCounterClockwise(seq)) { seq.Reverse(); }
+                var cen = Cartesian.Centroid(seq);
 
-                    /* GeoJSON assumes counterclockwise external rings,
-                     * see https://www.rfc-editor.org/rfc/rfc7946#appendix-B.1! */
+                grain.attributes.polygon = seq;
 
-                    if (!Cartesian.IsCounterClockwise(seq)) { seq.Reverse(); }
-                    var cen = Cartesian.Centroid(seq);
+                grain.location = new() { lon = cen.lon, lat = cen.lat };
+                grain.position = new(cen.lon, cen.lat);
 
-                    grain.attributes.polygon = seq;
-
-                    grain.location = new() { lon = cen.lon, lat = cen.lat };
-                    grain.position = new(cen.lon, cen.lat);
-
-                    return grain;
-                }
+                return grain;
             }
-
-            return null;
         }
+
+        return null;
     }
 }

@@ -2,29 +2,28 @@ using OsmSharp;
 using System;
 using System.Text.Json;
 
-namespace osm
+namespace osm;
+
+internal static class Reporter
 {
-    static class Reporter
+    private static string Serialize<T>(T entity)
     {
-        static string serialize<T>(T entity)
-        {
-            var opts = new JsonSerializerOptions() { WriteIndented = true };
-            return JsonSerializer.Serialize<T>(entity, opts);
-        }
+        var opts = new JsonSerializerOptions() { WriteIndented = true };
+        return JsonSerializer.Serialize<T>(entity, opts);
+    }
 
-        public static void ReportUndefined(Node node)
-        {
-            throw new ArgumentException($"Undefined node detected." + Environment.NewLine + $"{serialize(node)}");
-        }
+    public static void ReportUndefined(Node node)
+    {
+        throw new ArgumentException($"Undefined node detected." + Environment.NewLine + $"{Serialize(node)}");
+    }
 
-        public static void ReportOutbound(Node node)
-        {
-            throw new ArgumentException($"Outbound node detected." + Environment.NewLine + $"{serialize(node)}");
-        }
+    public static void ReportOutbound(Node node)
+    {
+        throw new ArgumentException($"Outbound node detected." + Environment.NewLine + $"{Serialize(node)}");
+    }
 
-        public static void ReportUndefined(Way way)
-        {
-            throw new ArgumentException($"Undefined way detected." + Environment.NewLine + $"{serialize(way)}");
-        }
+    public static void ReportUndefined(Way way)
+    {
+        throw new ArgumentException($"Undefined way detected." + Environment.NewLine + $"{Serialize(way)}");
     }
 }

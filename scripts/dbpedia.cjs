@@ -4,16 +4,15 @@ const Streamify = require("streamify-string");
 const rdfParser = require("rdf-parse").default;
 const rdfSerializer = require("rdf-serialize").default;
 const stringifyStream = require("stream-to-string");
-
-const { MONGO_CONNECTION_STRING } = require("./const.cjs"); 
 const {
   getPayload,
+  MONGO_CONNECTION_STRING,
   reportPayload,
   reportFetchedItems,
   reportFinished,
   reportError,
   writeUpdateToDatabase
-} = require("./share.cjs");
+} = require("./shared.cjs");
 
 const DBPEDIA_JSONLD_CONTEXT = {
   "my": "http://example.com/",
@@ -124,19 +123,19 @@ function constructFromJson(json) {
 
   return g.map((entity) => {
     const obj = { };
-    const get = (a) => Array.isArray(a) ? a[0] : a;
+    const fst = (a) => Array.isArray(a) ? a[0] : a;
 
     // en-containers
-    obj.name = get(entity.name?.en);
-    obj.description = get(entity.description?.en);
+    obj.name = fst(entity.name?.en);
+    obj.description = fst(entity.description?.en);
 
     // lists
-    obj.image = get(entity.image);
-    obj.website = get(entity.website);
+    obj.image = fst(entity.image);
+    obj.website = fst(entity.website);
 
     // linked
-    obj.dbpedia = (get(entity.dbpedia))?.substring(3);
-    obj.yago = (get(entity.yago))?.substring(3);
+    obj.dbpedia = (fst(entity.dbpedia))?.substring(3);
+    obj.yago = (fst(entity.yago))?.substring(3);
 
     // existing
     obj.wikidata = entity.wikidata.substring(3);
