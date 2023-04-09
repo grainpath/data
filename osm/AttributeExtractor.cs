@@ -140,16 +140,16 @@ internal static class AttributeExtractor
             && Regex.IsMatch(filter(s), @"^\+?\d{4,20}$");
     }
 
-    private static bool TryParsePositiveInteger(string s, out long num)
+    private static bool TryExtractPositiveInteger(string s, out int num)
     {
         num = 0;
-        long cur = 0;
+        int cur = 0;
 
         for (int i = 0; i < s.Length; ++i)
         {
             if (char.IsDigit(s[i]))
             {
-                cur = cur * 10 + long.Parse(s[i].ToString());
+                cur = cur * 10 + int.Parse(s[i].ToString());
             }
 
             else
@@ -369,13 +369,21 @@ internal static class AttributeExtractor
         }
     }
 
+    private static void Rank(TagsCollectionBase tags, Attributes attributes)
+    {
+        if (tags.TryGetValue("stars", out var v) && int.TryParse(v, out var n) && n >= 0)
+        {
+            attributes.rank = n;
+        }
+    }
+
     private static void Capacity(TagsCollectionBase tags, Attributes attributes)
     {
         var ks = new string[] { "capacity", "seats" };
 
         foreach (var k in ks)
         {
-            if (tags.TryGetValue(k, out var v) && long.TryParse(v, out var n) && n >= 0)
+            if (tags.TryGetValue(k, out var v) && int.TryParse(v, out var n) && n >= 0)
             {
                 attributes.capacity = n;
                 return;
@@ -383,7 +391,7 @@ internal static class AttributeExtractor
         }
 
         {
-            if (tags.TryGetValue("capacity:persons", out var v) && TryParsePositiveInteger(v, out var p))
+            if (tags.TryGetValue("capacity:persons", out var v) && TryExtractPositiveInteger(v, out var p))
             {
                 attributes.capacity = p;
             }
@@ -392,17 +400,9 @@ internal static class AttributeExtractor
 
     private static void MinimumAge(TagsCollectionBase tags, Attributes attributes)
     {
-        if (tags.TryGetValue("min_age", out var v) && long.TryParse(v, out var n) && n >= 0)
+        if (tags.TryGetValue("min_age", out var v) && int.TryParse(v, out var n) && n >= 0)
         {
             attributes.minimumAge = n;
-        }
-    }
-
-    private static void Rank(TagsCollectionBase tags, Attributes attributes)
-    {
-        if (tags.TryGetValue("stars", out var v) && long.TryParse(v, out var n) && n >= 0)
-        {
-            attributes.rank = n;
         }
     }
 

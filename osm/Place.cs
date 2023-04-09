@@ -124,13 +124,13 @@ internal sealed class Attributes
     public bool? wheelchair { get; set; }
 
     [BsonIgnoreIfNull]
-    public long? capacity { get; set; }
+    public double? rank { get; set; }
 
     [BsonIgnoreIfNull]
-    public long? minimumAge { get; set; }
+    public double? capacity { get; set; }
 
     [BsonIgnoreIfNull]
-    public long? rank { get; set; }
+    public double? minimumAge { get; set; }
 
     [BsonIgnoreIfNull]
     public SortedSet<string> rental { get; set; }
