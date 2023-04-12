@@ -16,14 +16,14 @@ import {
  */
 function extractKeywords(doc, keywords) {
 
-  const base = (word) => { return { label: word, count: 0, attributes: new Set() }; };
+  const base = (word) => { return { label: word, count: 0, attributeList: new Set() }; };
 
   doc.keywords.forEach(word => {
     if (!keywords.has(word)) { keywords.set(word, base(word)); }
     const item = keywords.get(word);
 
     ++item.count;
-    Object.keys(doc.attributes).forEach(key => item.attributes.add(key));
+    Object.keys(doc.attributes).forEach(key => item.attributeList.add(key));
   });
 }
 
@@ -116,7 +116,7 @@ async function index() {
       _id: "keywords",
       keywords: [...keywords.keys()].map(key => {
         const item = keywords.get(key);
-        return { ...item, attributes: [...item.attributes] }; // attributes as an array!
+        return { ...item, attributeList: [...item.attributeList] }; // attribute items as a list!
       })
     });
 
