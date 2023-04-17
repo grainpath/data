@@ -295,7 +295,7 @@ internal static class AttributeExtractor
         {
             if (tags.TryGetValue(k, out var v))
             {
-                if (vs.Contains(v)) { grain.keywords.Add("drinking_water"); }
+                if (vs.Contains(v)) { grain.keywords.Add("drinking water"); }
                 grain.attributes.drinkingWater = vs.Contains(v) ? true : false;
                 return;
             }
@@ -309,7 +309,7 @@ internal static class AttributeExtractor
 
         if (tags.TryGetValue(k, out var v))
         {
-            if (vs.Contains(v)) { grain.keywords.Add(k); }
+            if (vs.Contains(v)) { grain.keywords.Add("internet access"); }
             grain.attributes.internetAccess = vs.Contains(v) ? true : false;
         }
     }
