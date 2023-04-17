@@ -124,7 +124,7 @@ internal sealed class Attributes
     public bool? wheelchair { get; set; }
 
     [BsonIgnoreIfNull]
-    public double? rank { get; set; }
+    public double? rating { get; set; }
 
     [BsonIgnoreIfNull]
     public double? capacity { get; set; }

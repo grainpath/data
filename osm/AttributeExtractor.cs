@@ -369,11 +369,11 @@ internal static class AttributeExtractor
         }
     }
 
-    private static void Rank(TagsCollectionBase tags, Attributes attributes)
+    private static void Rating(TagsCollectionBase tags, Attributes attributes)
     {
         if (tags.TryGetValue("stars", out var v) && int.TryParse(v, out var n) && n >= 0)
         {
-            attributes.rank = n;
+            attributes.rating = n;
         }
     }
 
@@ -499,7 +499,7 @@ internal static class AttributeExtractor
         Wheelchair(tags, grain.attributes);
         Capacity(tags, grain.attributes);
         MinimumAge(tags, grain.attributes);
-        Rank(tags, grain.attributes);
+        Rating(tags, grain.attributes);
         Fee(tags, grain.attributes);
         Charge(tags, grain.attributes);
         OpeningHours(tags, grain.attributes);
