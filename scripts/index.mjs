@@ -45,8 +45,8 @@ function extractCollects(doc, collect, func) {
 }
 
 /**
- * Extract limits of the numeric attributes, such as `capacity`, `minimumAge`,
- * and `rank`.
+ * Extract limits of the numeric attributes, such as `rating`, `capacity`,
+ * and `minimumAge`.
  * @param {*} doc document that is currently considered.
  * @param {*} numeric objects storing limits.
  * @param {*} func setter for a possible new value.
@@ -82,8 +82,8 @@ async function index() {
   const arr = (n) => Array.apply(null, Array(n));
 
   try {
-    const [ keywords, clothes, cuisine, rental ] = arr(4).map(() => new Map());
-    const [ rank, capacity, minimumAge ] = arr(3).map(() => {
+    const [keywords, clothes, cuisine, rental] = arr(4).map(() => new Map());
+    const [rating, capacity, minimumAge] = arr(3).map(() => {
       return { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER };
     });
 
@@ -99,7 +99,7 @@ async function index() {
       extractCollects(doc, clothes, (doc) => doc.attributes.clothes);
       extractCollects(doc, cuisine, (doc) => doc.attributes.cuisine);
 
-      extractNumerics(doc, rank, (doc) => doc.attributes.rank);
+      extractNumerics(doc, rating, (doc) => doc.attributes.rating);
       extractNumerics(doc, capacity, (doc) => doc.attributes.capacity);
       extractNumerics(doc, minimumAge, (doc) => doc.attributes.minimumAge);
 
@@ -130,7 +130,7 @@ async function index() {
         rental: map2arr(rental),
         clothes: map2arr(clothes),
         cuisine: map2arr(cuisine),
-        rank: rank,
+        rating: rating,
         capacity: capacity,
         minimumAge: minimumAge
       }
