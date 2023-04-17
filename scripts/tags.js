@@ -12,8 +12,16 @@ import {
  */
 const COUNT_LIMIT = 50;
 
-const query = ({ key }) => {
-  return `https://taginfo.openstreetmap.org/api/4/key/values?key=${key}&filter=all&lang=en&sortname=count&sortorder=desc&qtype=value&format=json`;
+/**
+ * Extract first number of pages.
+ */
+const COUNT_PAGES = 5;
+
+/**
+ * Form valid query.
+ */
+const query = (key, page) => {
+  return `https://taginfo.openstreetmap.org/api/4/key/values?key=${key}&page=${page}&rp=100&filter=all&lang=en&sortname=count&sortorder=desc&qtype=value&format=json`;
 };
 
 const FORBIDDEN_VALUES = new Set([
@@ -127,7 +135,7 @@ const FORBIDDEN_VALUES = new Set([
 /**
  * Extracts possible values of the most popular tags with their frequencies.
  * 
- * See https://taginfo.openstreetmap.org/taginfo/apidoc#api_4_key_values.
+ * https://taginfo.openstreetmap.org/taginfo/apidoc#api_4_key_values
  */
 async function extract(args) {
 
@@ -139,41 +147,37 @@ async function extract(args) {
     for (const key of args) {
 
       logger.info(`> Processing key ${key}.`);
-
       const dict = new Map();
 
-      await fetch(query({ key: key }))
-        .then(res => res.json())
-        .then(res => {
+      for (let page = 1; page <= COUNT_PAGES; ++page) {
+        logger.info(`>  Processing page ${page}.`);
+        const res = await fetch(query(key, page));
+        const jsn = await res.json();
+        jsn.data.forEach((item) => {
+          // extract only valid values
+          item.value
+            .split(/[\s;,]+/)
+            .map((value) => convertSnakeToKeyword(value))
+            .filter((value) => isValidKeyword(value) && !FORBIDDEN_VALUES.has(value))
+            .forEach((value) => {
+              if (!dict.has(value)) { dict.set(value, 0); }
+              dict.set(value, dict.get(value) + item.count);
+            });
+        });
+      }
 
-          res.data.forEach(item => {
+      const file = `${ASSETS_BASE_ADDR}/tags/${key}.json`;
 
-            // extract only valid values
-            item.value
-              .split(/[\s;,]+/)
-              .map(value => convertSnakeToKeyword(value))
-              .filter(value => isValidKeyword(value) && !FORBIDDEN_VALUES.has(value))
-              .forEach(value => {
-                if (!dict.has(value)) { dict.set(value, 0); }
-                dict.set(value, dict.get(value) + item.count);
-              });
-          });
-        })
-        .then(() => {
-          const file = `${ASSETS_BASE_ADDR}/tags/${key}.json`;
+      // Map does not maintain lexicographic order!
+      let obj = [...dict.keys()]
+        .map(key => { return { value: key, count: dict.get(key) }; })
+        .sort((l, r) => r.count - l.count)
+        .filter(pair => pair.count >= COUNT_LIMIT);
 
-          // Map does not maintain lexicographic order!
-          let obj = [ ...dict.keys() ]
-            .map(key => { return { value: key, count: dict.get(key) }; })
-            .sort((l, r) => r.count - l.count)
-            .filter(pair => pair.count >= COUNT_LIMIT);
+      // write to a file
+      fs.writeFileSync(file, JSON.stringify(obj, null, 2));
 
-          // write to a file
-          fs.writeFileSync(file, JSON.stringify(obj, null, 2));
-
-          logger.info(`> Finished processing file ${file}, extracted ${obj.length} objects.`);
-        })
-        .catch(err => console.log(err));
+      logger.info(`> Finished processing file ${file}, extracted ${obj.length} objects.`);
     }
     logger.info("Finished processing OSM tags.");
   }
