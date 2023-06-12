@@ -26,4 +26,5 @@ node tags.js \
   shop \
   sport \
   tourism \
+  theatre:genre
 # man_made \

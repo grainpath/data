@@ -85,7 +85,7 @@ const KEYWORD_LENGTH_LIMIT_MIN = 3;
 /**
  * Extracted value should have lehgth at most `MAX` chars.
  */
-const KEYWORD_LENGTH_LIMIT_MAX = 25;
+const KEYWORD_LENGTH_LIMIT_MAX = 30;
 
 /**
  * All extracted keywords should comply with the snake_case-without-underscores
