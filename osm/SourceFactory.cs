@@ -52,15 +52,15 @@ internal static class SourceFactory
             return (-CrsEpsg3857.BoundLon, +CrsEpsg3857.BoundLat, +CrsEpsg3857.BoundLon, -CrsEpsg3857.BoundLat);
         }
 
-        var errMsg = "Bbox shall be in the format left;top;right;bottom within EPSG:3857.";
+        var errMsg = "The value of --bbox switch shall be in the format <left top right bottom> within https://epsg.io/3857.";
 
         if (bbox.Count != 4) { throw new Exception(errMsg); }
         var coords = bbox.Select(t => double.Parse(t)).ToList();
 
-        return (Math.Min(coords[0], coords[2]),
-                Math.Max(coords[1], coords[3]),
-                Math.Max(coords[0], coords[2]),
-                Math.Min(coords[1], coords[3]));
+        return (Math.Max(Math.Min(coords[0], coords[2]), -CrsEpsg3857.BoundLon),
+                Math.Min(Math.Max(coords[1], coords[3]), +CrsEpsg3857.BoundLat),
+                Math.Min(Math.Max(coords[0], coords[2]), +CrsEpsg3857.BoundLon),
+                Math.Max(Math.Min(coords[1], coords[3]), -CrsEpsg3857.BoundLat));
     }
 
     public static Source GetInstance(ILogger logger, string file, List<string> bbox)

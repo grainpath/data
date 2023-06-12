@@ -54,7 +54,8 @@ internal static class KeywordExtractor
             "office",
             "public_transport",
             "shop",
-            "sport"
+            "sport",
+            "theatre:genre"
         };
 
         var union = _wi.Union(_wo);

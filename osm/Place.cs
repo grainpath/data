@@ -124,10 +124,16 @@ internal sealed class Attributes
     public bool? wheelchair { get; set; }
 
     [BsonIgnoreIfNull]
+    public double? year { get; set; }
+
+    [BsonIgnoreIfNull]
     public double? rating { get; set; }
 
     [BsonIgnoreIfNull]
     public double? capacity { get; set; }
+
+    [BsonIgnoreIfNull]
+    public double? elevation { get; set; }
 
     [BsonIgnoreIfNull]
     public double? minimumAge { get; set; }

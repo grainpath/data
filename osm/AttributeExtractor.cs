@@ -369,6 +369,20 @@ internal static class AttributeExtractor
         }
     }
 
+    private static void Year(TagsCollectionBase tags, Attributes attributes)
+    {
+        var ks = new string[] { "year_of_construction", "building:year_built", "year", "construction_year", "year_built", "building:year", "year_completed", "build_year" };
+
+        foreach (var k in ks)
+        {
+            if (tags.TryGetValue(k, out var v) && int.TryParse(v, out var n))
+            {
+                attributes.year = n;
+                return;
+            }
+        }
+    }
+
     private static void Rating(TagsCollectionBase tags, Attributes attributes)
     {
         if (tags.TryGetValue("stars", out var v) && int.TryParse(v, out var n) && n >= 0)
@@ -394,6 +408,20 @@ internal static class AttributeExtractor
             if (tags.TryGetValue("capacity:persons", out var v) && TryExtractPositiveInteger(v, out var p))
             {
                 attributes.capacity = p;
+            }
+        }
+    }
+
+    private static void Elevation(TagsCollectionBase tags, Attributes attributes)
+    {
+        var ks = new string[] { "ele", "top_ele", "elevation" };
+
+        foreach (var k in ks)
+        {
+            if (tags.TryGetValue(k, out var v) && double.TryParse(v, out var n))
+            {
+                attributes.elevation = n;
+                return;
             }
         }
     }
@@ -497,9 +525,11 @@ internal static class AttributeExtractor
         Takeaway(tags, grain.attributes);
         Toilets(tags, grain.attributes);
         Wheelchair(tags, grain.attributes);
-        Capacity(tags, grain.attributes);
-        MinimumAge(tags, grain.attributes);
+        Year(tags, grain.attributes);
         Rating(tags, grain.attributes);
+        Capacity(tags, grain.attributes);
+        Elevation(tags, grain.attributes);
+        MinimumAge(tags, grain.attributes);
         Fee(tags, grain.attributes);
         Charge(tags, grain.attributes);
         OpeningHours(tags, grain.attributes);
