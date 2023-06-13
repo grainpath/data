@@ -18,12 +18,7 @@ internal class NameExtractor
                 name = v;
             }
         }
-
-        if (name is null)
-        {
-            var keyword = grain.keywords.ToList()[new Random().Next(0, grain.keywords.Count)];
-            name = string.Concat(char.ToUpper(keyword[0]).ToString(), keyword.AsSpan(1));
-        }
+        name ??= "Noname";
 
         grain.name = name;
         grain.attributes.name = name;

@@ -44,12 +44,10 @@ internal class MongoTarget : Target
 
     private void Write()
     {
-        var coll = _database.GetCollection<Place>(Constants.MONGO_GRAIN_COLLECTION);
-        var opts = new UpdateOptions { IsUpsert = true };
-
         var bulk = new List<WriteModel<Place>>();
+        var coll = _database.GetCollection<Place>(Constants.MONGO_GRAIN_COLLECTION);
 
-        // upsert strategy is beneficial if bboxes overlap ~> ensure indices!
+        // upsert strategy!
 
         foreach (var g in _grains)
         {

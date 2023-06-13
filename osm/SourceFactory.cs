@@ -52,7 +52,7 @@ internal static class SourceFactory
             return (-CrsEpsg3857.BoundLon, +CrsEpsg3857.BoundLat, +CrsEpsg3857.BoundLon, -CrsEpsg3857.BoundLat);
         }
 
-        var errMsg = "The value of --bbox switch shall be in the format <left top right bottom> within https://epsg.io/3857.";
+        var errMsg = "The value of --bbox switch shall be in the format [w n e s] within https://epsg.io/3857.";
 
         if (bbox.Count != 4) { throw new Exception(errMsg); }
         var coords = bbox.Select(t => double.Parse(t)).ToList();
