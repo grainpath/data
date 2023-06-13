@@ -1,4 +1,5 @@
 import { MongoClient } from "mongodb";
+import { isValidKeyword } from "./shared.cjs";
 import {
   getPayload,
   MONGO_CONNECTION_STRING,
@@ -9,36 +10,17 @@ import {
   writeUpdateToDatabase
 } from "./shared.cjs";
 import {
-  constructFromEntity,
-  fetchFromWikidata,
-  getEntityList,
-  OPTIONAL_NAME,
-  OPTIONAL_DESCRIPTION,
-  OPTIONAL_GENRE,
-  OPTIONAL_INSTANCE,
-  OPTIONAL_FACILITY,
-  OPTIONAL_MOVEMENT,
-  OPTIONAL_ARCH_STYLE,
-  OPTIONAL_FIELD_WORK,
-  OPTIONAL_IMAGE,
-  OPTIONAL_EMAIL,
-  OPTIONAL_PHONE,
-  OPTIONAL_WEBSITE,
-  OPTIONAL_INCEPTION,
-  OPTIONAL_OPENING_DATE,
-  OPTIONAL_CAPACITY,
-  OPTIONAL_ELEVATION,
-  OPTIONAL_MINIMUM_AGE,
-  OPTIONAL_GEONAMES,
-  OPTIONAL_MAPYCZ,
-  OPTIONAL_COUNTRY,
-  OPTIONAL_STREET,
-  OPTIONAL_HOUSE,
-  OPTIONAL_POSTAL_CODE,
-  PREAMBLE_SHORT,
+  fetchListFromWikidata
 } from "./wikidata.mjs"
 
-const wikidataQuery = (payload) => `${PREAMBLE_SHORT}
+const wikidataQuery = (payload) => `PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX my: <http://example.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX schema: <http://schema.org/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 CONSTRUCT {
   ?wikidataId
     my:name ?name;
@@ -58,8 +40,8 @@ CONSTRUCT {
     my:capacity ?capacity;
     my:elevation ?elevation;
     my:minimumAge ?minimumAge;
-    my:geonames ?geoNamesId;
     my:mapycz ?mapyCzId;
+    my:geonames ?geoNamesId;
     my:country ?country;
     my:street ?street;
     my:house ?house;
@@ -67,33 +49,156 @@ CONSTRUCT {
 }
 WHERE {
 VALUES ?wikidataId { ${payload} }
-${OPTIONAL_NAME}
-${OPTIONAL_DESCRIPTION}
-${OPTIONAL_GENRE}
-${OPTIONAL_INSTANCE}
-${OPTIONAL_FACILITY}
-${OPTIONAL_MOVEMENT}
-${OPTIONAL_ARCH_STYLE}
-${OPTIONAL_FIELD_WORK}
-${OPTIONAL_IMAGE}
-${OPTIONAL_EMAIL}
-${OPTIONAL_PHONE}
-${OPTIONAL_WEBSITE}
-${OPTIONAL_INCEPTION}
-${OPTIONAL_OPENING_DATE}
-${OPTIONAL_CAPACITY}
-${OPTIONAL_ELEVATION}
-${OPTIONAL_MINIMUM_AGE}
-${OPTIONAL_MAPYCZ}
-${OPTIONAL_GEONAMES}
-${OPTIONAL_COUNTRY}
-${OPTIONAL_STREET}
-${OPTIONAL_HOUSE}
-${OPTIONAL_POSTAL_CODE}
-}`;
+OPTIONAL { 
+  ?wikidataId rdfs:label | dct:title | foaf:name | skos:prefLabel | skos:altLabel ?name.
+  FILTER(LANG(?name) = "en" && STRLEN(STR(?name)) > 0)
+}
+OPTIONAL {
+  ?wikidataId schema:description | rdfs:comment ?description.
+  FILTER(LANG(?description) = "en" && STRLEN(STR(?description)) > 0)
+}
+OPTIONAL {
+  ?wikidataId wdt:P136 ?genreId.
+  ?genreId rdfs:label ?genre.
+  FILTER(LANG(?genre) = "en" && STRLEN(STR(?genre)) > 0)
+}
+OPTIONAL {
+  ?wikidataId wdt:P31 ?instanceOf.
+  ?instanceOf rdfs:label ?instance.
+  FILTER(LANG(?instance) = "en" && STRLEN(STR(?instance)) > 0)
+}
+OPTIONAL {
+  ?wikidataId wdt:P912 ?facilityId.
+  ?facilityId rdfs:label ?facility.
+  FILTER(LANG(?facility) = "en" && STRLEN(STR(?facility)) > 0)
+}
+OPTIONAL {
+  ?wikidataId wdt:P135 ?movementId.
+  ?movementId rdfs:label ?movement.
+  FILTER(LANG(?movement) = "en" && STRLEN(STR(?movement)) > 0)
+}
+OPTIONAL {
+  ?wikidataId wdt:P149 ?archStyleId.
+  ?archStyleId rdfs:label ?archStyle.
+  FILTER(LANG(?archStyle) = "en" && STRLEN(STR(?archStyle)) > 0)
+}
+OPTIONAL {
+  ?wikidataId wdt:P101 ?fieldWorkId.
+  ?fieldWorkId rdfs:label ?fieldWork.
+  FILTER(LANG(?fieldWork) = "en" && STRLEN(STR(?fieldWork)) > 0)
+}
+OPTIONAL {
+  ?wikidataId wdt:P18 ?image.
+}
+OPTIONAL {
+  ?wikidataId wdt:P968 ?email.
+}
+OPTIONAL {
+  ?wikidataId wdt:P1329 ?phone.
+}
+OPTIONAL {
+  ?wikidataId wdt:P856 ?website.
+}
+OPTIONAL {
+  ?wikidataId wdt:P571 ?inception.
+}
+OPTIONAL {
+  ?wikidataId wdt:P1619 ?openingDate.
+}
+OPTIONAL {
+  ?wikidataId wdt:P1083 ?capacity.
+}
+OPTIONAL {
+  ?wikidataId wdt:P2044 ?elevation.
+}
+OPTIONAL {
+  ?wikidataId wdt:P2899 ?minimumAge.
+}
+OPTIONAL {
+  ?wikidataId wdt:P8988 ?mapyCzId.
+}
+OPTIONAL {
+  ?wikidataId wdt:P1566 ?geoNamesId.
+}
+OPTIONAL {
+  ?wikidataId wdt:P17 ?countryId.
+  ?countryId rdfs:label ?country.
+  FILTER(LANG(?country) = "en" && STRLEN(STR(?country)) > 0)
+}
+OPTIONAL {
+  ?wikidataId wdt:P669 ?streetId.
+  ?streetId rdfs:label ?street.
+  FILTER(LANG(?street) = "en" && STRLEN(STR(?street)) > 0)
+}
+OPTIONAL {
+  ?wikidataId wdt:P4856 ?house.
+}
+OPTIONAL {
+  ?wikidataId wdt:P281 ?postalCode.
+}}`;
 
-function constructFromJson(json) {
-  return getEntityList(json).map((e) => constructFromEntity(e));
+function handleKeywordArray(list) {
+  const arr = (a) => Array.isArray(a) ? a : [a];
+  list = list ?? { "en": [] };
+
+  return arr(list.en)
+    .map((instance) => instance.toLowerCase())
+    .map((instance) => isValidKeyword(instance) ? instance : undefined)
+    .filter((instance) => instance !== undefined);
+}
+
+function handleDate(value) {
+  const d = new Date(value).getFullYear();
+  return isNaN(d) ? undefined : d;
+}
+
+function handleNumber(value) {
+  const n = parseFloat(value);
+  return isNaN(n) ? undefined : n;
+}
+
+function constructFromEntity(ent) {
+  const obj = {};
+  const fst = (a) => Array.isArray(a) ? a[0] : a;
+
+  obj.name = fst(ent.name?.en);
+  obj.description = fst(ent.description?.en);
+
+  const keywords = []
+    .concat(handleKeywordArray(ent.genre))
+    .concat(handleKeywordArray(ent.instance))
+    .concat(handleKeywordArray(ent.facility))
+    .concat(handleKeywordArray(ent.movement))
+    .concat(handleKeywordArray(ent.archStyle))
+    .concat(handleKeywordArray(ent.fieldWork));
+
+  obj.keywords = [...new Set(keywords)];
+
+  // contacts
+  obj.image = fst(ent.image);
+  obj.email = fst(ent.email)?.substring(7); // mailto:
+  obj.phone = fst(ent.phone);
+  obj.website = fst(ent.website);
+
+  // date
+  obj.year = handleDate(fst(ent.inception)) ?? handleDate(fst(ent.openingDate));
+
+  // numbers
+  obj.capacity = handleNumber(fst(ent.capacity));
+  obj.elevation = handleNumber(fst(ent.elevation));
+  obj.minimumAge = handleNumber(fst(ent.minimumAge));
+
+  obj.country = fst(ent.country?.en);
+  obj.street = fst(ent.street?.en);
+  obj.house = fst(ent.house);
+  obj.postalCode = fst(ent.postalCode);
+
+  // linked
+  obj.mapycz = fst(ent.mapycz);
+  obj.geonames = fst(ent.geonames);
+  obj.wikidata = ent.wikidata.substring(3); // cut wd:
+
+  return obj;
 }
 
 /**
@@ -113,8 +218,9 @@ async function wikidataEnrich() {
 
       const window = 100;
 
-      const lst = await fetchFromWikidata(wikidataQuery(payload.slice(0, window).join(' ')))
-        .then((jsn) => constructFromJson(jsn));
+      const qry = wikidataQuery(payload.slice(0, window).join(' '));
+      const lst = await fetchListFromWikidata(qry)
+        .then((lst) => lst.map((e) => constructFromEntity(e)));
 
       cnt += lst.length;
       reportFetchedItems(lst, resource);
@@ -124,6 +230,7 @@ async function wikidataEnrich() {
           $set: {
             "name": obj.name,
             "attributes.name": obj.name,
+            "attributes.description": obj.description,
             "attributes.image": obj.image,
             "attributes.email": obj.email,
             "attributes.phone": obj.phone,
@@ -132,7 +239,6 @@ async function wikidataEnrich() {
             "attributes.capacity": obj.capacity,
             "attributes.elevation": obj.elevation,
             "attributes.minimumAge": obj.minimumAge,
-            "attributes.description": obj.description,
             "attributes.address.country": obj.country,
             "attributes.address.place": obj.street,
             "attributes.address.house": obj.house,
