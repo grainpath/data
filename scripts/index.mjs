@@ -83,7 +83,7 @@ async function index() {
 
   try {
     const [keywords, clothes, cuisine, rental] = arr(4).map(() => new Map());
-    const [rating, capacity, minimumAge] = arr(3).map(() => {
+    const [year, rating, capacity, elevation, minimumAge] = arr(5).map(() => {
       return { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER };
     });
 
@@ -99,8 +99,10 @@ async function index() {
       extractCollects(doc, clothes, (doc) => doc.attributes.clothes);
       extractCollects(doc, cuisine, (doc) => doc.attributes.cuisine);
 
+      extractNumerics(doc, year, (doc) => doc.attributes.year);
       extractNumerics(doc, rating, (doc) => doc.attributes.rating);
       extractNumerics(doc, capacity, (doc) => doc.attributes.capacity);
+      extractNumerics(doc, elevation, (doc) => doc.attributes.elevation);
       extractNumerics(doc, minimumAge, (doc) => doc.attributes.minimumAge);
 
       if (++cnt >= 1000) { tot += cnt; cnt = 0; logger.info(`Still working... Processed ${tot} documents.`); }
@@ -120,6 +122,9 @@ async function index() {
       })
     });
 
+    // (!) capacity is capped at 1000
+    capacity.max = 1000;
+
     // insert bounds
 
     const map2arr = (m) => [...m.keys()].map(key => m.get(key));
@@ -130,8 +135,10 @@ async function index() {
         rental: map2arr(rental),
         clothes: map2arr(clothes),
         cuisine: map2arr(cuisine),
+        year: year,
         rating: rating,
         capacity: capacity,
+        elevation: elevation,
         minimumAge: minimumAge
       }
     });
