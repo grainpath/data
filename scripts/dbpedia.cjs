@@ -19,6 +19,7 @@ const DBPEDIA_JSONLD_CONTEXT = {
   "db": "http://dbpedia.org/resource/",
   "wd": "http://www.wikidata.org/entity/",
   "ya": "http://yago-knowledge.org/resource/",
+  "xsd": "http://www.w3.org/2001/XMLSchema#",
   "name": {
     "@id": "my:name",
     "@container": "@language"
@@ -34,6 +35,10 @@ const DBPEDIA_JSONLD_CONTEXT = {
   "website": {
     "@id": "my:website",
     "@type": "@id"
+  },
+  "date": {
+    "@id": "my:date",
+    "@type": "xsd:date"
   },
   "dbpedia": {
     "@id": "my:dbPedia",
@@ -65,12 +70,13 @@ PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX yago: <http://yago-knowledge.org/resource/>
 CONSTRUCT {
   ?wikidataId
-    my:dbPedia ?dbPediaId ;
-    my:yago ?yagoId ;
-    my:name ?name ;
-    my:description ?description ;
-    my:image ?image ;
-    my:website ?website .
+    my:dbPedia ?dbPediaId;
+    my:yago ?yagoId;
+    my:name ?name;
+    my:description ?description;
+    my:image ?image;
+    my:website ?website;
+    my:date ?date.
 }
 WHERE {
 VALUES ?wikidataId { ${payload} }
@@ -85,17 +91,22 @@ OPTIONAL {
 }
 OPTIONAL {
   ?dbPediaId owl:sameAs ?yagoId .
-  FILTER(ISURI(?yagoId) && STRSTARTS(STR(?yagoId), "http://yago-knowledge.org/resource/"))
+  FILTER(STRSTARTS(STR(?yagoId), "http://yago-knowledge.org/resource/"))
 }
 OPTIONAL {
   ?dbPediaId dbo:thumbnail ?image .
-  FILTER(ISURI(?image))
 }
 OPTIONAL {
   ?dbPediaId foaf:homepage ?website .
-  FILTER(ISURI(?website))
 }
-}`;
+OPTIONAL {
+  ?dbPediaId dbo:foundingDate | dbp:established | dbo:openingDate | dbp:opening | dbp:completionDate ?date.
+}}`;
+
+function handleDate(value) {
+  const d = new Date(value).getFullYear();
+  return isNaN(d) ? undefined : d;
+}
 
 function fetchFromDbpedia(payload) {
 
@@ -121,24 +132,27 @@ function constructFromJson(json) {
 
   if (g === undefined) { return []; }
 
-  return g.map((entity) => {
-    const obj = { };
+  return g.map((ent) => {
+    const obj = {};
     const fst = (a) => Array.isArray(a) ? a[0] : a;
 
     // en-containers
-    obj.name = fst(entity.name?.en);
-    obj.description = fst(entity.description?.en);
+    obj.name = fst(ent.name?.en);
+    obj.description = fst(ent.description?.en);
 
     // lists
-    obj.image = fst(entity.image);
-    obj.website = fst(entity.website);
+    obj.image = fst(ent.image);
+    obj.website = fst(ent.website);
+
+    // dates
+    obj.year = handleDate(fst(ent.date));
 
     // linked
-    obj.dbpedia = (fst(entity.dbpedia))?.substring(3);
-    obj.yago = (fst(entity.yago))?.substring(3);
+    obj.dbpedia = (fst(ent.dbpedia))?.substring(3);
+    obj.yago = (fst(ent.yago))?.substring(3);
 
     // existing
-    obj.wikidata = entity.wikidata.substring(3);
+    obj.wikidata = ent.wikidata.substring(3);
 
     return obj;
   });
@@ -172,6 +186,7 @@ async function dbpedia() {
             "attributes.description": obj.description,
             "attributes.image": obj.image,
             "attributes.website": obj.website,
+            "attributes.year": obj.year,
             "linked.dbpedia": obj.dbpedia,
             "linked.yago": obj.yago
           }
