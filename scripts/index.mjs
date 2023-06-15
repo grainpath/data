@@ -122,8 +122,7 @@ async function index() {
       })
     });
 
-    // (!) capacity is capped at 1000
-    capacity.max = 1000;
+    capacity.max = 1000; // (!)
 
     // insert bounds
 
