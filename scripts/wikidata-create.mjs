@@ -120,7 +120,7 @@ async function wikidataCreate() {
               coordinates: [loc.lon, loc.lat]
             },
             attributes: {
-              name: obj.name,
+              name: "Noname",
             },
             linked: {
               wikidata: obj.wikidata
